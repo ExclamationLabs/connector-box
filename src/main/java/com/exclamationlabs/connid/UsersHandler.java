@@ -450,8 +450,8 @@ public class UsersHandler extends AbstractHandler {
         builder.addAttribute(ATTR_TIMEZONE, info.getTimezone());
         builder.addAttribute(ATTR_TITLE, info.getJobTitle());
         builder.addAttribute(ATTR_AVATAR, info.getAvatarURL());
-        builder.addAttribute(ATTR_CREATED, info.getCreatedAt());
-        builder.addAttribute(ATTR_MODIFIED, info.getModifiedAt());
+        builder.addAttribute(ATTR_CREATED, info.getCreatedAt().getTime());
+        builder.addAttribute(ATTR_MODIFIED, info.getModifiedAt().getTime());
         builder.addAttribute(ATTR_USED, info.getSpaceUsed());
 
 
