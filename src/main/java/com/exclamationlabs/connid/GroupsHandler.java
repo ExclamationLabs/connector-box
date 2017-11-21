@@ -175,6 +175,15 @@ public class GroupsHandler extends AbstractHandler {
         attrViewabilityBuilder.setUpdateable(true);
         attrViewabilityBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewabilityBuilder.build());
+        
+        AttributeInfoBuilder attrIsSyncEnabledBuilder = new AttributeInfoBuilder(ATTR_SYNC, Boolean.class);
+        attrIsSyncEnabledBuilder.setRequired(false);
+        attrIsSyncEnabledBuilder.setMultiValued(false);
+        attrIsSyncEnabledBuilder.setCreateable(true);
+        attrIsSyncEnabledBuilder.setReadable(false);
+        attrIsSyncEnabledBuilder.setUpdateable(true);
+        attrIsSyncEnabledBuilder.setReturnedByDefault(false);
+        builder.addAttributeInfo(attrIsSyncEnabledBuilder.build());
 
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
         attrCreated.setMultiValued(false);
@@ -261,8 +270,8 @@ public class GroupsHandler extends AbstractHandler {
         builder.addAttribute(ATTR_SYNC, info.getExternalSyncIdentifier());
         builder.addAttribute(ATTR_INVITABILITY, info.getInvitabilityLevel());
         builder.addAttribute(ATTR_VIEWABILITY, info.getMemberViewabilityLevel());
-        builder.addAttribute(ATTR_CREATED, info.getCreatedAt());
-        builder.addAttribute(ATTR_MODIFIED, info.getModifiedAt());
+        builder.addAttribute(ATTR_CREATED, info.getCreatedAt().getTime());
+        builder.addAttribute(ATTR_MODIFIED, info.getModifiedAt().getTime());
 
         Iterable<BoxGroupMembership.Info> memberships = group.getAllMemberships();
         for (BoxGroupMembership.Info membershipInfo : memberships) {
