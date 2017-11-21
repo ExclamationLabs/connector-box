@@ -1,6 +1,5 @@
 package com.exclamationlabs.connid;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -8,7 +7,6 @@ import java.util.*;
 
 import com.box.sdk.BoxConfig;
 import com.box.sdk.BoxDeveloperEditionAPIConnection;
-import com.box.sdk.BoxUser;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.api.operations.ResolveUsernameApiOp;
@@ -29,9 +27,6 @@ import org.identityconnectors.framework.spi.operations.TestOp;
 
 import org.identityconnectors.framework.spi.operations.UpdateAttributeValuesOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
-import org.xml.sax.SAXException;
-import javax.xml.parsers.ParserConfigurationException;
-
 
 
 @ConnectorClass(configurationClass = BoxConfiguration.class, displayNameKey = "fis-charlotte.connector.display")
@@ -47,6 +42,8 @@ public class BoxConnector implements Connector,
 
     private Schema schema;
 
+    private BoxConfig boxConfig;
+
     @Override
     public BoxConfiguration getConfiguration() {
         return configuration;
@@ -55,27 +52,31 @@ public class BoxConnector implements Connector,
     @Override
     public void init(final Configuration configuration) {
         this.configuration = (BoxConfiguration) configuration;
+        this.boxConfig = null;
         authenticate();
 
         LOG.ok("Connector {0} successfully inited", getClass().getName());
     }
 
     private void authenticate() {
-        String clientId = getConfiguration().getClientId();
-        String clientSecret = getConfiguration().getClientSecret();
-        String enterpriseId = getConfiguration().getEnterpriseId();
-        String publicKeyID = getConfiguration().getPublicKeyID();
-        String privateKey = getConfiguration().getPrivateKey().toString();
-        String privateKeyPassword = getConfiguration().getPrivateKeyPassword().toString();
+        String configFilePath = getConfiguration().getConfigFilePath();
 
-        BoxConfig boxConfig = new BoxConfig(clientId, clientSecret, enterpriseId, publicKeyID, privateKey, privateKeyPassword);
+        boxConfig = null;
+
+        try(Reader reader = new FileReader(configFilePath)) {
+            boxConfig = BoxConfig.readFrom(reader);
+        } catch (IOException ex) {
+            LOG.error("Error loading Box JWT Auth Config File", ex);
+        }
+
         boxDeveloperEditionAPIConnection = BoxDeveloperEditionAPIConnection.getAppEnterpriseConnection(boxConfig);
 
     }
 
     @Override
     public void dispose() {
-        //boxDeveloperEditionAPIConnection = null;
+        this.boxDeveloperEditionAPIConnection = null;
+        this.boxConfig = null;
     }
 
     @Override
