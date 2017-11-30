@@ -49,24 +49,18 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrOwner = new AttributeInfoBuilder(ATTR_CO_OWNER);
         attrOwner.setRequired(false);
         attrOwner.setMultiValued(true);
-        attrOwner.setCreateable(true);
-        attrOwner.setReadable(true);
         attrOwner.setUpdateable(true);
         builder.addAttributeInfo(attrOwner.build());
 
         AttributeInfoBuilder attrEditor = new AttributeInfoBuilder(ATTR_EDITOR);
         attrEditor.setRequired(false);
         attrEditor.setMultiValued(true);
-        attrEditor.setCreateable(true);
-        attrEditor.setReadable(true);
         attrEditor.setUpdateable(true);
         builder.addAttributeInfo(attrEditor.build());
 
         AttributeInfoBuilder attrPreviewer = new AttributeInfoBuilder(ATTR_PREVIEWER);
         attrPreviewer.setRequired(false);
         attrPreviewer.setMultiValued(true);
-        attrPreviewer.setCreateable(true);
-        attrPreviewer.setReadable(false);
         attrPreviewer.setUpdateable(true);
         attrPreviewer.setReturnedByDefault(false);
         builder.addAttributeInfo(attrPreviewer.build());
@@ -74,8 +68,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrPrevUpl = new AttributeInfoBuilder(ATTR_PREVIEWER_UPLOADER);
         attrPrevUpl.setRequired(false);
         attrPrevUpl.setMultiValued(true);
-        attrPrevUpl.setCreateable(true);
-        attrPrevUpl.setReadable(false);
         attrPrevUpl.setUpdateable(true);
         attrPrevUpl.setReturnedByDefault(false);
         builder.addAttributeInfo(attrPrevUpl.build());
@@ -83,8 +75,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrUploader = new AttributeInfoBuilder(ATTR_UPLOADER);
         attrUploader.setRequired(false);
         attrUploader.setMultiValued(true);
-        attrUploader.setCreateable(true);
-        attrUploader.setReadable(true);
         attrUploader.setUpdateable(true);
         attrUploader.setReturnedByDefault(false);
         builder.addAttributeInfo(attrUploader.build());
@@ -92,8 +82,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrViewer = new AttributeInfoBuilder(ATTR_VIEWER);
         attrViewer.setRequired(false);
         attrViewer.setMultiValued(true);
-        attrViewer.setCreateable(true);
-        attrViewer.setReadable(false);
         attrViewer.setUpdateable(true);
         attrViewer.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewer.build());
@@ -101,8 +89,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrViewUpl = new AttributeInfoBuilder(ATTR_VIEWER_UPLOADER);
         attrViewUpl.setRequired(false);
         attrViewUpl.setMultiValued(true);
-        attrViewUpl.setCreateable(true);
-        attrViewUpl.setReadable(false);
         attrViewUpl.setUpdateable(true);
         attrViewUpl.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewUpl.build());
@@ -110,8 +96,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrProvenanceBuilder = new AttributeInfoBuilder(ATTR_PROVENANCE);
         attrProvenanceBuilder.setRequired(false);
         attrProvenanceBuilder.setMultiValued(false);
-        attrProvenanceBuilder.setCreateable(true);
-        attrProvenanceBuilder.setReadable(false);
         attrProvenanceBuilder.setUpdateable(true);
         attrProvenanceBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrProvenanceBuilder.build());
@@ -119,32 +103,24 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrGroupId = new AttributeInfoBuilder(ATTR_ID);
         attrGroupId.setRequired(false);
         attrGroupId.setMultiValued(false);
-        attrGroupId.setCreateable(false);
-        attrGroupId.setReadable(true);
         attrGroupId.setUpdateable(false);
         builder.addAttributeInfo(attrGroupId.build());
 
         AttributeInfoBuilder attrMembers = new AttributeInfoBuilder(ATTR_MEMBERS);
         attrMembers.setMultiValued(true);
         attrMembers.setRequired(false);
-        attrMembers.setCreateable(true);
-        attrMembers.setReadable(true);
         attrMembers.setUpdateable(true);
         builder.addAttributeInfo(attrMembers.build());
 
         AttributeInfoBuilder attrAdmins = new AttributeInfoBuilder(ATTR_ADMINS);
         attrAdmins.setMultiValued(true);
         attrAdmins.setRequired(false);
-        attrAdmins.setCreateable(true);
-        attrAdmins.setReadable(true);
         attrAdmins.setUpdateable(true);
         builder.addAttributeInfo(attrAdmins.build());
 
         AttributeInfoBuilder attrIdentifierBuilder = new AttributeInfoBuilder(ATTR_IDENTIFIER);
         attrIdentifierBuilder.setMultiValued(false);
         attrIdentifierBuilder.setRequired(false);
-        attrIdentifierBuilder.setCreateable(true);
-        attrIdentifierBuilder.setReadable(false);
         attrIdentifierBuilder.setUpdateable(true);
         attrIdentifierBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrIdentifierBuilder.build());
@@ -152,8 +128,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrDescriptionBuilder = new AttributeInfoBuilder(ATTR_DESCRIPTION);
         attrDescriptionBuilder.setMultiValued(false);
         attrDescriptionBuilder.setRequired(false);
-        attrDescriptionBuilder.setCreateable(true);
-        attrDescriptionBuilder.setReadable(false);
         attrDescriptionBuilder.setUpdateable(true);
         attrDescriptionBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrDescriptionBuilder.build());
@@ -161,8 +135,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrInvitabilityBuilder = new AttributeInfoBuilder(ATTR_INVITABILITY);
         attrInvitabilityBuilder.setMultiValued(false);
         attrInvitabilityBuilder.setRequired(false);
-        attrInvitabilityBuilder.setCreateable(true);
-        attrInvitabilityBuilder.setReadable(false);
         attrInvitabilityBuilder.setUpdateable(true);
         attrInvitabilityBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrInvitabilityBuilder.build());
@@ -170,8 +142,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrViewabilityBuilder = new AttributeInfoBuilder(ATTR_VIEWABILITY);
         attrViewabilityBuilder.setMultiValued(false);
         attrViewabilityBuilder.setRequired(false);
-        attrViewabilityBuilder.setCreateable(true);
-        attrViewabilityBuilder.setReadable(false);
         attrViewabilityBuilder.setUpdateable(true);
         attrViewabilityBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewabilityBuilder.build());
@@ -179,8 +149,6 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrIsSyncEnabledBuilder = new AttributeInfoBuilder(ATTR_SYNC, Boolean.class);
         attrIsSyncEnabledBuilder.setRequired(false);
         attrIsSyncEnabledBuilder.setMultiValued(false);
-        attrIsSyncEnabledBuilder.setCreateable(true);
-        attrIsSyncEnabledBuilder.setReadable(false);
         attrIsSyncEnabledBuilder.setUpdateable(true);
         attrIsSyncEnabledBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrIsSyncEnabledBuilder.build());
@@ -188,16 +156,12 @@ public class GroupsHandler extends AbstractHandler {
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
         attrCreated.setMultiValued(false);
         attrCreated.setRequired(false);
-        attrCreated.setCreateable(false);
-        attrCreated.setReadable(true);
         attrCreated.setUpdateable(false);
         builder.addAttributeInfo(attrCreated.build());
 
         AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
         attrModified.setMultiValued(false);
         attrModified.setRequired(false);
-        attrModified.setCreateable(false);
-        attrModified.setReadable(true);
         attrModified.setUpdateable(false);
         builder.addAttributeInfo(attrModified.build());
 
