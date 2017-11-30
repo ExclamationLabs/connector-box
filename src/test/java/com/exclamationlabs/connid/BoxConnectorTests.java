@@ -52,6 +52,7 @@ public class BoxConnectorTests {
 
 
         boxAPIConnection = new BoxAPIConnection(boxConfig);
+        assertNotNull(boxAPIConnection);
     }
 
 
@@ -83,85 +84,8 @@ public class BoxConnectorTests {
     };
 
 
-    private Set<Attribute> getFixtureAccountAttributes() {
-
-        Schema schema = newFacade().schema();
-        Set<Attribute> accountAttributes = new HashSet<Attribute>();
-        Set<AttributeInfo> accountAttributesInfo = schema.findObjectClassInfo(ObjectClass.ACCOUNT_NAME)
-                .getAttributeInfo();
-
-        for (AttributeInfo attributeInfo : accountAttributesInfo) {
-            if (!attributeInfo.isMultiValued() && attributeInfo.isCreateable() && attributeInfo.isReadable()) {
-                if (attributeInfo.getName().equals("login")) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "test_user@testmail.com"));
-                } else if (attributeInfo.getName().equals("timezone")) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "Europe/Bratislava"));
-                } else if (attributeInfo.getName().equals("language")) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "en"));
-                } else if (attributeInfo.getName().equals("role")) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "coadmin"));
-                } else if (attributeInfo.getType().equals(String.class)) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "test_user"));
-                } else if (attributeInfo.getType().equals(Boolean.class)) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "true"));
-                } else if (attributeInfo.getType().equals(Integer.class)) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), 0));
-                }
-                accountAttributes.add(AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, false));
-
-            }
-
-        }
-
-        return accountAttributes;
-    }
-
-    private BoxUser.Info getTestUser() {
-        assertNotNull(boxAPIConnection);
-
-        Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPIConnection);
-
-        for (BoxUser.Info user : users) {
-            if (user.getLogin().equals("test_user@testmail.com")) {
-                return user;
-            }
-
-        }
-
-        return null;
-
-    }
-
-    private BoxUser.Info createTestUser() {
-        assertNotNull(boxAPIConnection);
-
-        CreateUserParams params = new CreateUserParams();
-        params.setExternalAppUserId("test_user@testmail.com");
-        BoxUser.Info createdUserInfo = BoxUser.createAppUser(boxAPIConnection, "test_user", params);
-        return createdUserInfo;
-    }
-
-    private void deleteTestUser() {
-        assertNotNull(boxAPIConnection);
-
-        Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPIConnection);
-
-        for (BoxUser.Info user : users) {
-            if (user.getLogin().equals("test_user@testmail.com")) {
-                user.getResource().delete(false, false);
-            }
-
-        }
-    }
 
 
-    private void waitAFew() {
-        try {
-            TimeUnit.SECONDS.sleep(10);
-        } catch (InterruptedException ex) {
-            //ignore
-        }
-    }
 
     @Test
     public void schema() {
@@ -169,45 +93,8 @@ public class BoxConnectorTests {
         Assert.assertNotNull(schema);
     }
 
-    @Test
-    public void create() {
-        assertNotNull(newFacade());
 
-        BoxUser.Info userInfo = getTestUser();
-        if (userInfo != null) {
-            deleteTestUser();
-        }
 
-        Uid accountUid = newFacade().create(
-                new ObjectClass("__ACCOUNT__"),
-                getFixtureAccountAttributes(),
-                null
-        );
-
-        assertNotNull(accountUid);
-
-        waitAFew();
-
-        deleteTestUser();
-    }
-
-    @Test
-    public void delete() {
-        BoxUser.Info userInfo = getTestUser();
-        if (userInfo == null) {
-            userInfo = createTestUser();
-        }
-
-        waitAFew();
-
-        newFacade().delete(
-                new ObjectClass("__ACCOUNT__"),
-                new Uid(userInfo.getID()),
-                null
-        );
-
-        assertNull(getTestUser());
-    }
 
     @Test
     public void test() {
