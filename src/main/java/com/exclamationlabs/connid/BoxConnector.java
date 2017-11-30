@@ -37,14 +37,6 @@ public class BoxConnector implements Connector,
 
     private BoxConfiguration configuration;
 
-    public BoxDeveloperEditionAPIConnection getBoxDeveloperEditionAPIConnection() {
-        return boxDeveloperEditionAPIConnection;
-    }
-
-    public void setBoxDeveloperEditionAPIConnection(BoxDeveloperEditionAPIConnection boxDeveloperEditionAPIConnection) {
-        this.boxDeveloperEditionAPIConnection = boxDeveloperEditionAPIConnection;
-    }
-
     private BoxDeveloperEditionAPIConnection boxDeveloperEditionAPIConnection;
 
     private Schema schema;
@@ -148,7 +140,6 @@ public class BoxConnector implements Connector,
 
     }
 
-    //FIXME
     @Override
     public Uid addAttributeValues(
             final ObjectClass objclass,
@@ -158,7 +149,6 @@ public class BoxConnector implements Connector,
         return update(objclass, uid, valuesToAdd, options);
     }
 
-    //FIXME
     @Override
     public Uid removeAttributeValues(
             final ObjectClass objclass,

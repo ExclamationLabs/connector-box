@@ -56,14 +56,12 @@ public class UsersHandler extends AbstractHandler {
         ObjectClassInfoBuilder ocBuilder = new ObjectClassInfoBuilder();
         // mail
         AttributeInfoBuilder attrLoginBuilder = new AttributeInfoBuilder(ATTR_LOGIN);
-        attrLoginBuilder.setName("Name");
         attrLoginBuilder.setRequired(true);
         attrLoginBuilder.setMultiValued(false);
         attrLoginBuilder.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrLoginBuilder.build());
         // role
         AttributeInfoBuilder attrRoleBuilder = new AttributeInfoBuilder(ATTR_ROLE);
-        attrRoleBuilder.setName("Role");
         attrRoleBuilder.setRequired(false);
         attrRoleBuilder.setMultiValued(false);
         attrRoleBuilder.setUpdateable(true);
@@ -71,7 +69,6 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrRoleBuilder.build());
         // explicit_ID
         AttributeInfoBuilder attrUserId = new AttributeInfoBuilder(ATTR_ID);
-        attrUserId.setName("ID");
         attrUserId.setRequired(false);
         attrUserId.setMultiValued(false);
         attrUserId.setUpdateable(false);
@@ -79,14 +76,12 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrUserId.build());
         // language
         AttributeInfoBuilder attrLanguageBuilder = new AttributeInfoBuilder(ATTR_LANGUAGE);
-        attrLanguageBuilder.setName("Language");
         attrLanguageBuilder.setRequired(false);
         attrLanguageBuilder.setMultiValued(false);
         attrLanguageBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrLanguageBuilder.build());
         // is_sync_enabled
         AttributeInfoBuilder attrIsSyncEnabledBuilder = new AttributeInfoBuilder(ATTR_SYNC, Boolean.class);
-        attrIsSyncEnabledBuilder.setName("Sync Enabled");
         attrIsSyncEnabledBuilder.setRequired(false);
         attrIsSyncEnabledBuilder.setMultiValued(false);
         attrIsSyncEnabledBuilder.setUpdateable(true);
@@ -94,35 +89,30 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrIsSyncEnabledBuilder.build());
         // job_titile
         AttributeInfoBuilder attrJobTitleBuilder = new AttributeInfoBuilder(ATTR_TITLE);
-        attrJobTitleBuilder.setName("Job Title");
         attrJobTitleBuilder.setRequired(false);
         attrJobTitleBuilder.setMultiValued(false);
         attrJobTitleBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrJobTitleBuilder.build());
         // phone
         AttributeInfoBuilder attrPhoneBuilder = new AttributeInfoBuilder(ATTR_PHONE);
-        attrPhoneBuilder.setName("Phone");
         attrPhoneBuilder.setRequired(false);
         attrPhoneBuilder.setMultiValued(false);
         attrPhoneBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrPhoneBuilder.build());
         // address
         AttributeInfoBuilder attrAddressBuilder = new AttributeInfoBuilder(ATTR_ADDRESS);
-        attrAddressBuilder.setName("Address");
         attrAddressBuilder.setRequired(false);
         attrAddressBuilder.setMultiValued(false);
         attrAddressBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrAddressBuilder.build());
         // space_amount
         AttributeInfoBuilder attrSpaceAmountBuilder = new AttributeInfoBuilder(ATTR_SPACE, Integer.class);
-        attrSpaceAmountBuilder.setName("Space Amount");
         attrSpaceAmountBuilder.setRequired(false);
         attrSpaceAmountBuilder.setMultiValued(false);
         attrSpaceAmountBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrSpaceAmountBuilder.build());
         // tracking_codes
         AttributeInfoBuilder attrTrackingCodeBuilder = new AttributeInfoBuilder(ATTR_CODE);
-        attrTrackingCodeBuilder.setName("Tracking Codes");
         attrTrackingCodeBuilder.setRequired(false);
         attrTrackingCodeBuilder.setMultiValued(true);
         attrTrackingCodeBuilder.setUpdateable(true);
@@ -130,7 +120,6 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrTrackingCodeBuilder.build());
         // can_see_managed_users
         AttributeInfoBuilder attrCanSeeManagedUsersBuilder = new AttributeInfoBuilder(ATTR_MANAGED, Boolean.class);
-        attrCanSeeManagedUsersBuilder.setName("Can see managed users");
         attrCanSeeManagedUsersBuilder.setRequired(false);
         attrCanSeeManagedUsersBuilder.setMultiValued(false);
         attrCanSeeManagedUsersBuilder.setUpdateable(true);
@@ -138,14 +127,12 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrCanSeeManagedUsersBuilder.build());
         // timezone
         AttributeInfoBuilder attrTimezoneBuilder = new AttributeInfoBuilder(ATTR_TIMEZONE);
-        attrTimezoneBuilder.setName("Timezone");
         attrTimezoneBuilder.setRequired(false);
         attrTimezoneBuilder.setMultiValued(false);
         attrTimezoneBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrTimezoneBuilder.build());
         // is_exempt_from_device_limits
         AttributeInfoBuilder attrIsExemptFromDeviceLimits = new AttributeInfoBuilder(ATTR_DEVICELIMITS, Boolean.class);
-        attrIsExemptFromDeviceLimits.setName("Exempt from device limits");
         attrIsExemptFromDeviceLimits.setRequired(false);
         attrIsExemptFromDeviceLimits.setMultiValued(false);
         attrIsExemptFromDeviceLimits.setUpdateable(true);
@@ -154,7 +141,6 @@ public class UsersHandler extends AbstractHandler {
         // is_exempt_from_login_verification
         AttributeInfoBuilder attrIsExemptFromLoginVerification = new AttributeInfoBuilder(ATTR_LOGINVERIFICATION,
                 Boolean.class);
-        attrIsExemptFromLoginVerification.setName("Exempt from login verification");
         attrIsExemptFromLoginVerification.setRequired(false);
         attrIsExemptFromLoginVerification.setMultiValued(false);
         attrIsExemptFromLoginVerification.setUpdateable(true);
@@ -162,14 +148,12 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrIsExemptFromLoginVerification.build());
         // avatar
         AttributeInfoBuilder attrAvatar = new AttributeInfoBuilder(ATTR_AVATAR, String.class);
-        attrAvatar.setName("Avatar URL");
         attrAvatar.setRequired(false);
         attrAvatar.setMultiValued(false);
         attrAvatar.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrAvatar.build());
         // is_external_collab_restricted
         AttributeInfoBuilder attrCollab = new AttributeInfoBuilder(ATTR_COLLAB, Boolean.class);
-        attrCollab.setName("External collab restricted");
         attrCollab.setRequired(false);
         attrCollab.setMultiValued(false);
         attrCollab.setUpdateable(true);
@@ -177,7 +161,6 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrCollab.build());
         // enterprise
         AttributeInfoBuilder attrEnterpise = new AttributeInfoBuilder(ATTR_ENTERPRISE);
-        attrEnterpise.setName("Entriprise");
         attrEnterpise.setRequired(false);
         attrEnterpise.setMultiValued(false);
         attrEnterpise.setUpdateable(true);
@@ -185,7 +168,6 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrEnterpise.build());
         // notify
         AttributeInfoBuilder attrNotify = new AttributeInfoBuilder(ATTR_NOTIFY, Boolean.class);
-        attrNotify.setName("Notify");
         attrNotify.setRequired(false);
         attrNotify.setMultiValued(false);
         attrNotify.setUpdateable(true);
@@ -193,28 +175,24 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrNotify.build());
 
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
-        attrCreated.setName("Created");
         attrCreated.setRequired(false);
         attrCreated.setMultiValued(false);
         attrCreated.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrCreated.build());
 
         AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
-        attrModified.setName("Modified");
         attrModified.setRequired(false);
         attrModified.setMultiValued(false);
         attrModified.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrModified.build());
 
         AttributeInfoBuilder attrUsed = new AttributeInfoBuilder(ATTR_USED, Integer.class);
-        attrUsed.setName("Used");
         attrUsed.setRequired(false);
         attrUsed.setMultiValued(false);
         attrUsed.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrUsed.build());
 
         AttributeInfoBuilder attrPsswd = new AttributeInfoBuilder(ATTR_PSSWD, Boolean.class);
-        attrPsswd.setName("Password");
         attrPsswd.setRequired(false);
         attrPsswd.setMultiValued(false);
         attrPsswd.setCreateable(false);
@@ -222,7 +200,6 @@ public class UsersHandler extends AbstractHandler {
         ocBuilder.addAttributeInfo(attrPsswd.build());
 
         AttributeInfoBuilder attrMembership = new AttributeInfoBuilder(ATTR_MEMBERSHIPS);
-        attrMembership.setName("Memberships");
         attrMembership.setMultiValued(true);
         attrMembership.setRequired(false);
         attrMembership.setUpdateable(true);
@@ -273,8 +250,10 @@ public class UsersHandler extends AbstractHandler {
 
         CreateUserParams createUserParams = new CreateUserParams();
 
+
         String login = getStringAttr(attributes, ATTR_LOGIN);
         if (StringUtil.isBlank(login)) {
+
             throw new InvalidAttributeValueException("Missing mandatory attribute " + ATTR_LOGIN);
         }
 
