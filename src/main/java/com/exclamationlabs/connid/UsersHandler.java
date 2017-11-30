@@ -174,7 +174,7 @@ public class UsersHandler extends AbstractHandler {
         attrIsExemptFromLoginVerification.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrIsExemptFromLoginVerification.build());
         // avatar
-        AttributeInfoBuilder attrAvatar = new AttributeInfoBuilder(ATTR_AVATAR, byte[].class);
+        AttributeInfoBuilder attrAvatar = new AttributeInfoBuilder(ATTR_AVATAR, String.class);
         attrAvatar.setRequired(false);
         attrAvatar.setMultiValued(false);
         attrAvatar.setCreateable(false);
@@ -266,6 +266,28 @@ public class UsersHandler extends AbstractHandler {
         return connectorObjects;
     }
 
+    public void query(String query, ResultsHandler handler, OperationOptions ops) {
+
+        LOGGER.info("UserHandler query VALUE: {0}", query);
+
+        if (query == null) {
+
+            ArrayList<ConnectorObject> users = getAllUsers();
+
+            for (ConnectorObject userConnectorObject : users) {
+                handler.handle(userConnectorObject);
+            }
+        } else {
+            Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseOrExternalUsers(boxDeveloperEditionAPIConnection, query);
+            for (BoxUser.Info user : users) {
+
+                handler.handle(userToConnectorObject(user.getResource()));
+            }
+        }
+
+
+    }
+
     public Uid createUser(Set<Attribute> attributes) {
         if (attributes == null || attributes.isEmpty()) {
             throw new InvalidAttributeValueException("attributes not provided or empty");
@@ -293,10 +315,11 @@ public class UsersHandler extends AbstractHandler {
             createUserParams.setCanSeeManagedUsers(canSeeManagedUsers);
         }
 
-        String externalAppUserId = getStringAttr(attributes, ATTR_ID);
-        if (externalAppUserId != null) {
-            createUserParams.setExternalAppUserId(externalAppUserId);
-        }
+//      Let the username be generated
+//        String externalAppUserId = getStringAttr(attributes, ATTR_ID);
+//        if (externalAppUserId != null) {
+//            createUserParams.setExternalAppUserId(externalAppUserId);
+//        }
 
         Boolean isExemptFromDeviceLimits = getBoolAttr(attributes, ATTR_DEVICELIMITS);
         if (isExemptFromDeviceLimits != null) {
@@ -358,7 +381,7 @@ public class UsersHandler extends AbstractHandler {
 
         BoxUser.Info createdUserInfo = BoxUser.createEnterpriseUser(boxDeveloperEditionAPIConnection, login, name, createUserParams);
 
-        return new Uid(createdUserInfo.getID());
+        return new Uid(createdUserInfo.getLogin());
     }
 
 

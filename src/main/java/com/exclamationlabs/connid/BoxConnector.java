@@ -29,14 +29,21 @@ import org.identityconnectors.framework.spi.operations.UpdateAttributeValuesOp;
 import org.identityconnectors.framework.spi.operations.UpdateOp;
 
 
-@ConnectorClass(configurationClass = BoxConfiguration.class, displayNameKey = "fis-charlotte.connector.display")
+@ConnectorClass(configurationClass = BoxConfiguration.class, displayNameKey = "Exclamation Labs Box Connector")
 public class BoxConnector implements Connector,
-        CreateOp, UpdateOp, UpdateAttributeValuesOp, DeleteOp,
-        AuthenticateOp, ResolveUsernameApiOp, SchemaOp, TestOp, SearchOp<BoxFilterTranslator> {
+        CreateOp, UpdateOp, UpdateAttributeValuesOp, DeleteOp, SchemaOp, TestOp, SearchOp<String> {
 
     private static final Log LOG = Log.getLog(BoxConnector.class);
 
     private BoxConfiguration configuration;
+
+    public BoxDeveloperEditionAPIConnection getBoxDeveloperEditionAPIConnection() {
+        return boxDeveloperEditionAPIConnection;
+    }
+
+    public void setBoxDeveloperEditionAPIConnection(BoxDeveloperEditionAPIConnection boxDeveloperEditionAPIConnection) {
+        this.boxDeveloperEditionAPIConnection = boxDeveloperEditionAPIConnection;
+    }
 
     private BoxDeveloperEditionAPIConnection boxDeveloperEditionAPIConnection;
 
@@ -69,7 +76,11 @@ public class BoxConnector implements Connector,
             LOG.error("Error loading Box JWT Auth Config File", ex);
         }
 
-        boxDeveloperEditionAPIConnection = BoxDeveloperEditionAPIConnection.getAppEnterpriseConnection(boxConfig);
+        try {
+            boxDeveloperEditionAPIConnection = BoxDeveloperEditionAPIConnection.getAppEnterpriseConnection(boxConfig);
+        } catch (Exception e) {
+            throw new ConnectorIOException("Failed to connect", e);
+        }
 
     }
 
@@ -179,28 +190,6 @@ public class BoxConnector implements Connector,
     }
 
     @Override
-    public Uid authenticate(
-            final ObjectClass objectClass,
-            final String username,
-            final GuardedString password,
-            final OperationOptions options) {
-
-        boxDeveloperEditionAPIConnection.authenticate();
-
-
-        return new Uid(username);
-    }
-
-    @Override
-    public Uid resolveUsername(
-            final ObjectClass objectClass,
-            final String username,
-            final OperationOptions options) {
-
-        return new Uid(username);
-    }
-
-    @Override
     public Schema schema() {
         if (null == schema) {
             SchemaBuilder schemaBuilder = new SchemaBuilder(BoxConnector.class);
@@ -230,18 +219,17 @@ public class BoxConnector implements Connector,
     }
 
     @Override
-    public FilterTranslator<BoxFilterTranslator> createFilterTranslator(
+    public FilterTranslator<String> createFilterTranslator(
             final ObjectClass objectClass,
             final OperationOptions options) {
 
-        return new AbstractFilterTranslator<BoxFilterTranslator>() {
-        };
+        return new BoxFilterTranslator();
     }
 
     @Override
     public void executeQuery(
             final ObjectClass objectClass,
-            final BoxFilterTranslator query,
+            final String query,
             final ResultsHandler handler,
             final OperationOptions options) {
 
@@ -254,13 +242,9 @@ public class BoxConnector implements Connector,
 
         if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
 
-
             UsersHandler usersHandler = new UsersHandler(boxDeveloperEditionAPIConnection);
-            ArrayList<ConnectorObject> users = usersHandler.getAllUsers();
+            usersHandler.query(query, handler, options);
 
-            for (ConnectorObject userConnectorObject : users) {
-                handler.handle(userConnectorObject);
-            }
 
         } else if (objectClass.is(ObjectClass.GROUP_NAME)) {
             GroupsHandler groupsHandler = new GroupsHandler(boxDeveloperEditionAPIConnection);
