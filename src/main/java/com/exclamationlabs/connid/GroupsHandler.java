@@ -47,121 +47,94 @@ public class GroupsHandler extends AbstractHandler {
         builder.setType(ObjectClass.GROUP_NAME);
 
         AttributeInfoBuilder attrOwner = new AttributeInfoBuilder(ATTR_CO_OWNER);
-        attrOwner.setRequired(false);
         attrOwner.setMultiValued(true);
         attrOwner.setUpdateable(true);
         builder.addAttributeInfo(attrOwner.build());
 
         AttributeInfoBuilder attrEditor = new AttributeInfoBuilder(ATTR_EDITOR);
-        attrEditor.setRequired(false);
         attrEditor.setMultiValued(true);
         attrEditor.setUpdateable(true);
         builder.addAttributeInfo(attrEditor.build());
 
         AttributeInfoBuilder attrPreviewer = new AttributeInfoBuilder(ATTR_PREVIEWER);
-        attrPreviewer.setRequired(false);
         attrPreviewer.setMultiValued(true);
         attrPreviewer.setUpdateable(true);
         attrPreviewer.setReturnedByDefault(false);
         builder.addAttributeInfo(attrPreviewer.build());
 
         AttributeInfoBuilder attrPrevUpl = new AttributeInfoBuilder(ATTR_PREVIEWER_UPLOADER);
-        attrPrevUpl.setRequired(false);
         attrPrevUpl.setMultiValued(true);
         attrPrevUpl.setUpdateable(true);
         attrPrevUpl.setReturnedByDefault(false);
         builder.addAttributeInfo(attrPrevUpl.build());
 
         AttributeInfoBuilder attrUploader = new AttributeInfoBuilder(ATTR_UPLOADER);
-        attrUploader.setRequired(false);
         attrUploader.setMultiValued(true);
         attrUploader.setUpdateable(true);
         attrUploader.setReturnedByDefault(false);
         builder.addAttributeInfo(attrUploader.build());
 
         AttributeInfoBuilder attrViewer = new AttributeInfoBuilder(ATTR_VIEWER);
-        attrViewer.setRequired(false);
         attrViewer.setMultiValued(true);
         attrViewer.setUpdateable(true);
         attrViewer.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewer.build());
 
         AttributeInfoBuilder attrViewUpl = new AttributeInfoBuilder(ATTR_VIEWER_UPLOADER);
-        attrViewUpl.setRequired(false);
         attrViewUpl.setMultiValued(true);
         attrViewUpl.setUpdateable(true);
         attrViewUpl.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewUpl.build());
 
         AttributeInfoBuilder attrProvenanceBuilder = new AttributeInfoBuilder(ATTR_PROVENANCE);
-        attrProvenanceBuilder.setRequired(false);
-        attrProvenanceBuilder.setMultiValued(false);
         attrProvenanceBuilder.setUpdateable(true);
         attrProvenanceBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrProvenanceBuilder.build());
 
         AttributeInfoBuilder attrGroupId = new AttributeInfoBuilder(ATTR_ID);
-        attrGroupId.setRequired(false);
-        attrGroupId.setMultiValued(false);
         attrGroupId.setUpdateable(false);
         builder.addAttributeInfo(attrGroupId.build());
 
         AttributeInfoBuilder attrMembers = new AttributeInfoBuilder(ATTR_MEMBERS);
         attrMembers.setMultiValued(true);
-        attrMembers.setRequired(false);
         attrMembers.setUpdateable(true);
         builder.addAttributeInfo(attrMembers.build());
 
         AttributeInfoBuilder attrAdmins = new AttributeInfoBuilder(ATTR_ADMINS);
         attrAdmins.setMultiValued(true);
-        attrAdmins.setRequired(false);
         attrAdmins.setUpdateable(true);
         builder.addAttributeInfo(attrAdmins.build());
 
         AttributeInfoBuilder attrIdentifierBuilder = new AttributeInfoBuilder(ATTR_IDENTIFIER);
-        attrIdentifierBuilder.setMultiValued(false);
-        attrIdentifierBuilder.setRequired(false);
         attrIdentifierBuilder.setUpdateable(true);
         attrIdentifierBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrIdentifierBuilder.build());
 
         AttributeInfoBuilder attrDescriptionBuilder = new AttributeInfoBuilder(ATTR_DESCRIPTION);
-        attrDescriptionBuilder.setMultiValued(false);
-        attrDescriptionBuilder.setRequired(false);
         attrDescriptionBuilder.setUpdateable(true);
         attrDescriptionBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrDescriptionBuilder.build());
 
         AttributeInfoBuilder attrInvitabilityBuilder = new AttributeInfoBuilder(ATTR_INVITABILITY);
-        attrInvitabilityBuilder.setMultiValued(false);
-        attrInvitabilityBuilder.setRequired(false);
         attrInvitabilityBuilder.setUpdateable(true);
         attrInvitabilityBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrInvitabilityBuilder.build());
 
         AttributeInfoBuilder attrViewabilityBuilder = new AttributeInfoBuilder(ATTR_VIEWABILITY);
-        attrViewabilityBuilder.setMultiValued(false);
-        attrViewabilityBuilder.setRequired(false);
         attrViewabilityBuilder.setUpdateable(true);
         attrViewabilityBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrViewabilityBuilder.build());
         
         AttributeInfoBuilder attrIsSyncEnabledBuilder = new AttributeInfoBuilder(ATTR_SYNC, Boolean.class);
-        attrIsSyncEnabledBuilder.setRequired(false);
-        attrIsSyncEnabledBuilder.setMultiValued(false);
         attrIsSyncEnabledBuilder.setUpdateable(true);
         attrIsSyncEnabledBuilder.setReturnedByDefault(false);
         builder.addAttributeInfo(attrIsSyncEnabledBuilder.build());
 
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
-        attrCreated.setMultiValued(false);
-        attrCreated.setRequired(false);
         attrCreated.setUpdateable(false);
         builder.addAttributeInfo(attrCreated.build());
 
         AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
-        attrModified.setMultiValued(false);
-        attrModified.setRequired(false);
         attrModified.setUpdateable(false);
         builder.addAttributeInfo(attrModified.build());
 

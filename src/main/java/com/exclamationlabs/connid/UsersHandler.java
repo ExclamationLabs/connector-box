@@ -57,151 +57,108 @@ public class UsersHandler extends AbstractHandler {
         // mail
         AttributeInfoBuilder attrLoginBuilder = new AttributeInfoBuilder(ATTR_LOGIN);
         attrLoginBuilder.setRequired(true);
-        attrLoginBuilder.setMultiValued(false);
         attrLoginBuilder.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrLoginBuilder.build());
         // role
         AttributeInfoBuilder attrRoleBuilder = new AttributeInfoBuilder(ATTR_ROLE);
-        attrRoleBuilder.setRequired(false);
-        attrRoleBuilder.setMultiValued(false);
         attrRoleBuilder.setUpdateable(true);
         attrRoleBuilder.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrRoleBuilder.build());
         // explicit_ID
         AttributeInfoBuilder attrUserId = new AttributeInfoBuilder(ATTR_ID);
-        attrUserId.setRequired(false);
-        attrUserId.setMultiValued(false);
         attrUserId.setUpdateable(false);
         attrUserId.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrUserId.build());
         // language
         AttributeInfoBuilder attrLanguageBuilder = new AttributeInfoBuilder(ATTR_LANGUAGE);
-        attrLanguageBuilder.setRequired(false);
-        attrLanguageBuilder.setMultiValued(false);
         attrLanguageBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrLanguageBuilder.build());
         // is_sync_enabled
         AttributeInfoBuilder attrIsSyncEnabledBuilder = new AttributeInfoBuilder(ATTR_SYNC, Boolean.class);
-        attrIsSyncEnabledBuilder.setRequired(false);
-        attrIsSyncEnabledBuilder.setMultiValued(false);
         attrIsSyncEnabledBuilder.setUpdateable(true);
         attrIsSyncEnabledBuilder.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrIsSyncEnabledBuilder.build());
         // job_titile
         AttributeInfoBuilder attrJobTitleBuilder = new AttributeInfoBuilder(ATTR_TITLE);
-        attrJobTitleBuilder.setRequired(false);
-        attrJobTitleBuilder.setMultiValued(false);
         attrJobTitleBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrJobTitleBuilder.build());
         // phone
         AttributeInfoBuilder attrPhoneBuilder = new AttributeInfoBuilder(ATTR_PHONE);
-        attrPhoneBuilder.setRequired(false);
-        attrPhoneBuilder.setMultiValued(false);
         attrPhoneBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrPhoneBuilder.build());
         // address
         AttributeInfoBuilder attrAddressBuilder = new AttributeInfoBuilder(ATTR_ADDRESS);
-        attrAddressBuilder.setRequired(false);
-        attrAddressBuilder.setMultiValued(false);
         attrAddressBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrAddressBuilder.build());
         // space_amount
         AttributeInfoBuilder attrSpaceAmountBuilder = new AttributeInfoBuilder(ATTR_SPACE, Integer.class);
-        attrSpaceAmountBuilder.setRequired(false);
-        attrSpaceAmountBuilder.setMultiValued(false);
         attrSpaceAmountBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrSpaceAmountBuilder.build());
         // tracking_codes
         AttributeInfoBuilder attrTrackingCodeBuilder = new AttributeInfoBuilder(ATTR_CODE);
-        attrTrackingCodeBuilder.setRequired(false);
         attrTrackingCodeBuilder.setMultiValued(true);
         attrTrackingCodeBuilder.setUpdateable(true);
         attrTrackingCodeBuilder.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrTrackingCodeBuilder.build());
         // can_see_managed_users
         AttributeInfoBuilder attrCanSeeManagedUsersBuilder = new AttributeInfoBuilder(ATTR_MANAGED, Boolean.class);
-        attrCanSeeManagedUsersBuilder.setRequired(false);
-        attrCanSeeManagedUsersBuilder.setMultiValued(false);
         attrCanSeeManagedUsersBuilder.setUpdateable(true);
         attrCanSeeManagedUsersBuilder.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrCanSeeManagedUsersBuilder.build());
         // timezone
         AttributeInfoBuilder attrTimezoneBuilder = new AttributeInfoBuilder(ATTR_TIMEZONE);
-        attrTimezoneBuilder.setRequired(false);
-        attrTimezoneBuilder.setMultiValued(false);
         attrTimezoneBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrTimezoneBuilder.build());
         // is_exempt_from_device_limits
         AttributeInfoBuilder attrIsExemptFromDeviceLimits = new AttributeInfoBuilder(ATTR_DEVICELIMITS, Boolean.class);
-        attrIsExemptFromDeviceLimits.setRequired(false);
-        attrIsExemptFromDeviceLimits.setMultiValued(false);
         attrIsExemptFromDeviceLimits.setUpdateable(true);
         attrIsExemptFromDeviceLimits.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrIsExemptFromDeviceLimits.build());
         // is_exempt_from_login_verification
         AttributeInfoBuilder attrIsExemptFromLoginVerification = new AttributeInfoBuilder(ATTR_LOGINVERIFICATION,
                 Boolean.class);
-        attrIsExemptFromLoginVerification.setRequired(false);
-        attrIsExemptFromLoginVerification.setMultiValued(false);
         attrIsExemptFromLoginVerification.setUpdateable(true);
         attrIsExemptFromLoginVerification.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrIsExemptFromLoginVerification.build());
         // avatar
         AttributeInfoBuilder attrAvatar = new AttributeInfoBuilder(ATTR_AVATAR, String.class);
-        attrAvatar.setRequired(false);
-        attrAvatar.setMultiValued(false);
         attrAvatar.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrAvatar.build());
         // is_external_collab_restricted
         AttributeInfoBuilder attrCollab = new AttributeInfoBuilder(ATTR_COLLAB, Boolean.class);
-        attrCollab.setRequired(false);
-        attrCollab.setMultiValued(false);
         attrCollab.setUpdateable(true);
         attrCollab.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrCollab.build());
         // enterprise
         AttributeInfoBuilder attrEnterpise = new AttributeInfoBuilder(ATTR_ENTERPRISE);
-        attrEnterpise.setRequired(false);
-        attrEnterpise.setMultiValued(false);
         attrEnterpise.setUpdateable(true);
         attrEnterpise.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrEnterpise.build());
         // notify
         AttributeInfoBuilder attrNotify = new AttributeInfoBuilder(ATTR_NOTIFY, Boolean.class);
-        attrNotify.setRequired(false);
-        attrNotify.setMultiValued(false);
         attrNotify.setUpdateable(true);
         attrNotify.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrNotify.build());
 
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
-        attrCreated.setRequired(false);
-        attrCreated.setMultiValued(false);
         attrCreated.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrCreated.build());
 
         AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
-        attrModified.setRequired(false);
-        attrModified.setMultiValued(false);
         attrModified.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrModified.build());
 
         AttributeInfoBuilder attrUsed = new AttributeInfoBuilder(ATTR_USED, Integer.class);
-        attrUsed.setRequired(false);
-        attrUsed.setMultiValued(false);
         attrUsed.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrUsed.build());
 
         AttributeInfoBuilder attrPsswd = new AttributeInfoBuilder(ATTR_PSSWD, Boolean.class);
-        attrPsswd.setRequired(false);
-        attrPsswd.setMultiValued(false);
         attrPsswd.setCreateable(false);
         attrPsswd.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrPsswd.build());
 
         AttributeInfoBuilder attrMembership = new AttributeInfoBuilder(ATTR_MEMBERSHIPS);
         attrMembership.setMultiValued(true);
-        attrMembership.setRequired(false);
         attrMembership.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrMembership.build());
 
@@ -341,9 +298,7 @@ public class UsersHandler extends AbstractHandler {
         return new Uid(createdUserInfo.getLogin());
     }
 
-
-
-    public Uid updateUser(Uid uid, Set<Attribute> attributes) {
+	public Uid updateUser(Uid uid, Set<Attribute> attributes) {
         BoxUser.Info info = null;
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxDeveloperEditionAPIConnection);
 
