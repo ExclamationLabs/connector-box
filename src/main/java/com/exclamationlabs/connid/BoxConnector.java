@@ -234,8 +234,13 @@ public class BoxConnector implements Connector,
         if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
 
             UsersHandler usersHandler = new UsersHandler(boxDeveloperEditionAPIConnection);
-            usersHandler.query(query, handler, options);
+            //usersHandler.query(query, handler, options);
 
+            ArrayList<ConnectorObject> users = usersHandler.getAllUsers();
+
+            for (ConnectorObject userConnectorObject : users) {
+                handler.handle(userConnectorObject);
+            }
 
         } else if (objectClass.is(ObjectClass.GROUP_NAME)) {
             GroupsHandler groupsHandler = new GroupsHandler(boxDeveloperEditionAPIConnection);
