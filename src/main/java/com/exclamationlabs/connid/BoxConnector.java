@@ -60,8 +60,6 @@ public class BoxConnector implements Connector,
     private void authenticateResource() {
         String configFilePath = getConfiguration().getConfigFilePath();
 
-        dispose();
-
         try(Reader reader = new FileReader(configFilePath)) {
             boxConfig = BoxConfig.readFrom(reader);
         } catch (IOException ex) {
@@ -79,7 +77,6 @@ public class BoxConnector implements Connector,
     @Override
     public void dispose() {
         this.boxDeveloperEditionAPIConnection = null;
-        this.boxConfig = null;
     }
 
     @Override
@@ -200,11 +197,15 @@ public class BoxConnector implements Connector,
     @Override
     public void test() {
 
+        dispose();
+
         authenticateResource();
 
         if (!boxDeveloperEditionAPIConnection.canRefresh()) {
             throw new ConnectorIOException("Cannot refresh auth token");
         }
+
+        boxDeveloperEditionAPIConnection.refresh();
 
     }
 
