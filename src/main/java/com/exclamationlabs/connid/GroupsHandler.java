@@ -132,10 +132,12 @@ public class GroupsHandler extends AbstractHandler {
 
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
         attrCreated.setUpdateable(false);
+        attrCreated.setCreateable(false);
         builder.addAttributeInfo(attrCreated.build());
 
         AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
         attrModified.setUpdateable(false);
+        attrModified.setCreateable(false);
         builder.addAttributeInfo(attrModified.build());
 
         ObjectClassInfo groupSchemaInfo = builder.build();

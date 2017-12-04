@@ -142,10 +142,12 @@ public class UsersHandler extends AbstractHandler {
 
         AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
         attrCreated.setUpdateable(false);
+        attrCreated.setCreateable(false);
         ocBuilder.addAttributeInfo(attrCreated.build());
 
         AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
         attrModified.setUpdateable(false);
+        attrModified.setCreateable(false);
         ocBuilder.addAttributeInfo(attrModified.build());
 
         AttributeInfoBuilder attrUsed = new AttributeInfoBuilder(ATTR_USED, Integer.class);
@@ -417,7 +419,9 @@ public class UsersHandler extends AbstractHandler {
 
         Iterable<BoxGroupMembership.Info> memberships = user.getAllMemberships();
         for (BoxGroupMembership.Info membershipInfo : memberships) {
-            builder.addAttribute(ATTR_MEMBERSHIPS, membershipInfo.getID());
+            LOGGER.info("Group INFO getGroup {0}", membershipInfo.getGroup());
+            LOGGER.info("Group INFO getID {0}", membershipInfo.getGroup().getID());
+            builder.addAttribute(ATTR_MEMBERSHIPS, membershipInfo.getGroup().getID());
         }
 
 
