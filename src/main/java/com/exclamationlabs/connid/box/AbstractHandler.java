@@ -1,4 +1,4 @@
-package com.exclamationlabs.connid;
+package com.exclamationlabs.connid.box;
 
 import com.box.sdk.CreateUserParams;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;

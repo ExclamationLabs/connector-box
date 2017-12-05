@@ -1,4 +1,4 @@
-package com.exclamationlabs.connid;
+package com.exclamationlabs.connid.box;
 
 import com.box.sdk.BoxDeveloperEditionAPIConnection;
 import com.box.sdk.BoxGroupMembership;
@@ -13,6 +13,7 @@ import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class UsersHandler extends AbstractHandler {
@@ -419,11 +420,12 @@ public class UsersHandler extends AbstractHandler {
         }
 
         Iterable<BoxGroupMembership.Info> memberships = user.getAllMemberships();
+        List<String> groupMemberships = new ArrayList<String>();
         for (BoxGroupMembership.Info membershipInfo : memberships) {
-            LOGGER.info("Group INFO getGroup {0}", membershipInfo.getGroup());
             LOGGER.info("Group INFO getID {0}", membershipInfo.getGroup().getID());
-            builder.addAttribute(ATTR_MEMBERSHIPS, membershipInfo.getGroup().getID());
+            groupMemberships.add(membershipInfo.getGroup().getID());
         }
+        builder.addAttribute(ATTR_MEMBERSHIPS, groupMemberships);
 
 
         ConnectorObject connectorObject = builder.build();

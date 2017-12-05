@@ -1,4 +1,4 @@
-package com.exclamationlabs.connid;
+package com.exclamationlabs.connid.box;
 
 import java.io.FileReader;
 import java.io.IOException;

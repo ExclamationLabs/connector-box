@@ -33,7 +33,7 @@
             <excludes>
                 <exclude>net.tirasa.connid:connector-framework</exclude>
                 <exclude>net.tirasa.connid:connector-framework-internal</exclude>
-                <exclude>com.exclamationlabs.connid:connector-box</exclude>
+                <exclude>com.exclamationlabs.connid.box:connector-box</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

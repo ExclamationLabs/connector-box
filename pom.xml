@@ -12,7 +12,7 @@
         <version>1.4.2.0</version>
     </parent>
 
-    <groupId>com.exclamationlabs.connid</groupId>
+    <groupId>com.exclamationlabs.connid.box</groupId>
     <artifactId>connector-box</artifactId>
     <version>1.0-SNAPSHOT</version>
     <name>ConnId Box Identity connector</name>

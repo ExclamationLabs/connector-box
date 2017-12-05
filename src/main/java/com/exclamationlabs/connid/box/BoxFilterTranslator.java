@@ -1,4 +1,4 @@
-package com.exclamationlabs.connid;
+package com.exclamationlabs.connid.box;
 
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
