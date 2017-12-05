@@ -196,7 +196,6 @@ public class UsersHandler extends AbstractHandler {
             Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseOrExternalUsers(boxDeveloperEditionAPIConnection, query);
             for (BoxUser.Info user : users) {
 
-                LOGGER.info("UserHandler user.getResource VALUE: {0}", user.getResource());
                 handler.handle(userToConnectorObject(user.getResource()));
             }
         }
@@ -394,7 +393,7 @@ public class UsersHandler extends AbstractHandler {
         BoxUser.Info info = user.getInfo();
 
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
-        builder.setUid(new Uid(info.getLogin()));
+        builder.setUid(new Uid(user.getID()));
 
         builder.setName(info.getName());
         builder.addAttribute(ATTR_ID, info.getID());
