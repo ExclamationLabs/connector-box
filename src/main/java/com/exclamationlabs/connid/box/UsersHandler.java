@@ -193,11 +193,8 @@ public class UsersHandler extends AbstractHandler {
                 handler.handle(userConnectorObject);
             }
         } else {
-            Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseOrExternalUsers(boxDeveloperEditionAPIConnection, query);
-            for (BoxUser.Info user : users) {
-
-                handler.handle(userToConnectorObject(user.getResource()));
-            }
+            BoxUser user = new BoxUser(boxDeveloperEditionAPIConnection, query);
+            handler.handle(userToConnectorObject(user));
         }
 
 
@@ -310,25 +307,42 @@ public class UsersHandler extends AbstractHandler {
             throw new ConnectorIOException("Unable to confirm uid on box resource");
         }
 
-        String login = getStringAttr(attributes, ATTR_LOGIN);
-        if (StringUtil.isBlank(login)) {
-            throw new InvalidAttributeValueException("Missing mandatory attribute " + ATTR_LOGIN);
+        String attrAddress = getStringAttr(attributes, ATTR_ADDRESS);
+        if (attrAddress != null) {
+            info.setAddress(attrAddress);
         }
-
-        String name = getStringAttr(attributes, "__NAME__");
-        if (StringUtil.isBlank(name)) {
-            throw new InvalidAttributeValueException("Missing mandatory attribute " + ATTR_NAME);
+        Boolean attrManaged = getBoolAttr(attributes, ATTR_MANAGED);
+        if (attrManaged != null) {
+            info.setCanSeeManagedUsers(attrManaged);
         }
-
-        info.setAddress(getStringAttr(attributes, ATTR_ADDRESS));
-        info.setCanSeeManagedUsers(getBoolAttr(attributes, ATTR_MANAGED));
-        info.setExternalAppUserId(getStringAttr(attributes, ATTR_ID));
-        info.setIsExemptFromDeviceLimits(getBoolAttr(attributes, ATTR_DEVICELIMITS));
-        info.setIsSyncEnabled(getBoolAttr(attributes, ATTR_SYNC));
-        info.setJobTitle(getStringAttr(attributes, ATTR_TITLE));
-        info.setLanguage(getStringAttr(attributes, ATTR_LANGUAGE));
-        info.setPhone(getStringAttr(attributes, ATTR_PHONE));
-        info.setSpaceAmount(getLongAttr(attributes, ATTR_SPACE));
+        String attrID = getStringAttr(attributes, ATTR_ID);
+        if (attrID != null) {
+            info.setExternalAppUserId(attrID);
+        }
+        Boolean attrDeviceLimits = getBoolAttr(attributes, ATTR_DEVICELIMITS);
+        if (attrDeviceLimits != null) {
+            info.setIsExemptFromDeviceLimits(attrDeviceLimits);
+        }
+        Boolean attrSync = getBoolAttr(attributes, ATTR_SYNC);
+        if (attrSync != null) {
+            info.setIsSyncEnabled(attrSync);
+        }
+        String attrTitle = getStringAttr(attributes, ATTR_TITLE);
+        if (attrTitle != null) {
+            info.setJobTitle(attrTitle);
+        }
+        String attrLanguage = getStringAttr(attributes, ATTR_LANGUAGE);
+        if (attrLanguage != null) {
+            info.setLanguage(attrLanguage);
+        }
+        String attrPhone = getStringAttr(attributes, ATTR_PHONE);
+        if (attrPhone != null) {
+            info.setPhone(attrPhone);
+        }
+        Long attrSpace = getLongAttr(attributes, ATTR_SPACE);
+        if (attrSpace != null) {
+            info.setSpaceAmount(attrSpace);
+        }
 
         //Administrative status
         if ((getAttr(attributes, OperationalAttributes.ENABLE_NAME, Boolean.class)) != null) {
@@ -340,7 +354,7 @@ public class UsersHandler extends AbstractHandler {
             }
         }
 
-        String role = getStringAttr(attributes, ATTR_ROLE);
+        String role = getAttr(attributes, ATTR_ROLE, String.class, "");
         switch (role) {
             case "admin":
                 info.setRole(BoxUser.Role.ADMIN);
