@@ -381,16 +381,8 @@ public class UsersHandler extends AbstractHandler {
             throw new InvalidAttributeValueException("uid not provided");
         }
 
-        Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxDeveloperEditionAPIConnection);
-
-        for (BoxUser.Info user : users) {
-            if (user.getID().equals(uid.getUidValue())) {
-                user.getResource().delete(false, false);
-            }
-
-        }
-
-
+        BoxUser user = new BoxUser(boxDeveloperEditionAPIConnection,uid.getUidValue());
+        user.delete(false, false);
     }
 
     public static ConnectorObject userToConnectorObject(BoxUser user) {
