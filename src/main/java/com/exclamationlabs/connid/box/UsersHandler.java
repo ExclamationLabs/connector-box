@@ -303,14 +303,8 @@ public class UsersHandler extends AbstractHandler {
 
 	public Uid updateUser(Uid uid, Set<Attribute> attributes) {
         BoxUser.Info info = null;
-        Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxDeveloperEditionAPIConnection);
-
-        for (BoxUser.Info user : users) {
-            if (user.getID().equals(uid.getUidValue())) {
-                info = user;
-            }
-
-        }
+        BoxUser user = new BoxUser(boxDeveloperEditionAPIConnection, uid.getUidValue());
+        info = user.getInfo();
 
         if (StringUtil.isEmpty(info.getID())) {
             throw new ConnectorIOException("Unable to confirm uid on box resource");
