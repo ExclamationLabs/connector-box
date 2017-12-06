@@ -263,7 +263,7 @@ public class UsersHandler extends AbstractHandler {
             createUserParams.setPhone(phone);
         }
 
-        Integer spaceAmount = getIntegerAttr(attributes, ATTR_SPACE);
+        Long spaceAmount = getLongAttr(attributes, ATTR_SPACE);
         if (spaceAmount != null) {
             createUserParams.setSpaceAmount(spaceAmount);
         }
@@ -334,7 +334,7 @@ public class UsersHandler extends AbstractHandler {
         info.setJobTitle(getStringAttr(attributes, ATTR_TITLE));
         info.setLanguage(getStringAttr(attributes, ATTR_LANGUAGE));
         info.setPhone(getStringAttr(attributes, ATTR_PHONE));
-        info.setSpaceAmount(getIntegerAttr(attributes, ATTR_SPACE));
+        info.setSpaceAmount(getLongAttr(attributes, ATTR_SPACE));
 
         //Administrative status
         if ((getAttr(attributes, OperationalAttributes.ENABLE_NAME, Boolean.class)) != null) {

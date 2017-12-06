@@ -11,46 +11,24 @@ import java.util.Set;
 public class AbstractHandler {
 
     public static String getStringAttr(Set<Attribute> attributes, String attrName) {
-        if (attributes == null || attributes.isEmpty()) {
-            throw new InvalidAttributeValueException("Attributes not provided or empty");
-        }
-        if (attrName == null || attrName.isEmpty()) {
-            throw new InvalidAttributeValueException("AttrName not provided or empty");
-        }
         return getAttr(attributes, attrName, String.class);
     }
 
     public static Boolean getBoolAttr(Set<Attribute> attributes, String attrName) {
-        if (attributes == null || attributes.isEmpty()) {
-            throw new InvalidAttributeValueException("Attributes not provided or empty");
-        }
-        if (attrName == null || attrName.isEmpty()) {
-            throw new InvalidAttributeValueException("AttrName not provided or empty");
-        }
         return getAttr(attributes, attrName, Boolean.class);
     }
 
     public static Integer getIntegerAttr(Set<Attribute> attributes, String attrName) {
-        if (attributes == null || attributes.isEmpty()) {
-            throw new InvalidAttributeValueException("Attributes not provided or empty");
-        }
-        if (attrName == null || attrName.isEmpty()) {
-            throw new InvalidAttributeValueException("AttrName not provided or empty");
-        }
         return getAttr(attributes, attrName, Integer.class);
     }
 
-
-    public static <T> T getAttr(Set<Attribute> attributes, String attrName, Class<T> type) {
-        if (attributes == null || attributes.isEmpty()) {
-            throw new InvalidAttributeValueException("Attributes not provided or empty");
-        }
-        if (attrName == null || attrName.isEmpty()) {
-            throw new InvalidAttributeValueException("AttrName not provided or empty");
-        }
-        return getAttr(attributes, attrName, type, null);
+    public static Long getLongAttr(Set<Attribute> attributes, String attrName) {
+        return getAttr(attributes, attrName, Long.class);
     }
 
+    public static <T> T getAttr(Set<Attribute> attributes, String attrName, Class<T> type) {
+        return getAttr(attributes, attrName, type, null);
+    }
 
     public static <T> T getAttr(Set<Attribute> attributes, String attrName, Class<T> type, T defaultVal) {
         if (attributes == null || attributes.isEmpty()) {
