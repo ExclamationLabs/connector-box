@@ -2,6 +2,7 @@ package com.exclamationlabs.connid.box;
 
 import com.box.sdk.BoxDeveloperEditionAPIConnection;
 import com.box.sdk.BoxGroupMembership;
+import com.box.sdk.BoxGroup;
 import com.box.sdk.BoxUser;
 import com.box.sdk.CreateUserParams;
 import org.identityconnectors.common.StringUtil;
@@ -295,7 +296,16 @@ public class UsersHandler extends AbstractHandler {
 
         BoxUser.Info createdUserInfo = BoxUser.createEnterpriseUser(boxDeveloperEditionAPIConnection, login, name, createUserParams);
 
-        return new Uid(createdUserInfo.getLogin());
+        List<String> attrGroups = getMultiAttr(attributes, ATTR_MEMBERSHIPS, String.class);
+        if(!attrGroups.isEmpty()){
+            BoxUser user = new BoxUser(boxDeveloperEditionAPIConnection, createdUserInfo.getID());
+            for (String group : attrGroups){
+                BoxGroup boxGroup = new BoxGroup(boxDeveloperEditionAPIConnection, group);
+                boxGroup.addMembership(user);
+            }
+        }
+
+        return new Uid(createdUserInfo.getID());
     }
 
 	public Uid updateUser(Uid uid, Set<Attribute> attributes) {
@@ -372,6 +382,23 @@ public class UsersHandler extends AbstractHandler {
 
         info.getResource().updateInfo(info);
 
+        List<String> attrGroups = getMultiAttr(attributes, ATTR_MEMBERSHIPS, String.class);
+        if(attrGroups != null){
+            attrGroups = new ArrayList<String>(attrGroups);
+            Iterable<BoxGroupMembership.Info> memberships = user.getAllMemberships();
+            for (BoxGroupMembership.Info membershipInfo : memberships){
+                if(attrGroups.contains(membershipInfo.getGroup().getID())){
+                    attrGroups.remove(membershipInfo.getGroup().getID());
+                }else{
+                    membershipInfo.getResource().delete();
+                }
+            }
+            for (String group : attrGroups){
+                BoxGroup boxGroup = new BoxGroup(boxDeveloperEditionAPIConnection, group);
+                boxGroup.addMembership(user);
+            }
+        }
+        
         return uid;
     }
 

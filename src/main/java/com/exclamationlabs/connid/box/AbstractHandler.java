@@ -62,6 +62,27 @@ public class AbstractHandler {
         return defaultVal;
     }
 
+    public static <T> List<T> getMultiAttr(Set<Attribute> attributes, String attrName, Class<T> listContentType) {
+        if (attributes == null || attributes.isEmpty()) {
+            throw new InvalidAttributeValueException("Attributes not provided or empty");
+        }
+        if (attrName == null || attrName.isEmpty()) {
+            throw new InvalidAttributeValueException("AttrName not provided or empty");
+        }
+        for (Attribute attr : attributes) {
+            if (attrName.equals(attr.getName())) {
+                for(Object item : attr.getValue()){
+                    if(!listContentType.isAssignableFrom(item.getClass())){
+                        throw new InvalidAttributeValueException(
+                            "Unsupported type " + item.getClass() + " for attribute " + attrName);
+                    }
+                }
+                return (List<T>) attr.getValue();
+            }
+        }
+        return null;
+    }
+
     public static <T> void addAttr(ConnectorObjectBuilder builder, String attrName, T attrVal) {
         if (attrName == null || attrName.isEmpty()) {
             throw new InvalidAttributeValueException("AttrName not provided or empty");
