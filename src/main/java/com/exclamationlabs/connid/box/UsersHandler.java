@@ -92,7 +92,7 @@ public class UsersHandler extends AbstractHandler {
         attrAddressBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrAddressBuilder.build());
         // space_amount
-        AttributeInfoBuilder attrSpaceAmountBuilder = new AttributeInfoBuilder(ATTR_SPACE, Integer.class);
+        AttributeInfoBuilder attrSpaceAmountBuilder = new AttributeInfoBuilder(ATTR_SPACE, Long.class);
         attrSpaceAmountBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrSpaceAmountBuilder.build());
         // tracking_codes
@@ -151,7 +151,7 @@ public class UsersHandler extends AbstractHandler {
         attrModified.setCreateable(false);
         ocBuilder.addAttributeInfo(attrModified.build());
 
-        AttributeInfoBuilder attrUsed = new AttributeInfoBuilder(ATTR_USED, Integer.class);
+        AttributeInfoBuilder attrUsed = new AttributeInfoBuilder(ATTR_USED, Long.class);
         attrUsed.setUpdateable(false);
         ocBuilder.addAttributeInfo(attrUsed.build());
 
