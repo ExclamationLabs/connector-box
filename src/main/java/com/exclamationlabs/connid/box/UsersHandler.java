@@ -1,5 +1,6 @@
 package com.exclamationlabs.connid.box;
 
+import com.box.sdk.BoxAPIException;
 import com.box.sdk.BoxDeveloperEditionAPIConnection;
 import com.box.sdk.BoxGroupMembership;
 import com.box.sdk.BoxGroup;
@@ -195,7 +196,10 @@ public class UsersHandler extends AbstractHandler {
             }
         } else {
             BoxUser user = new BoxUser(boxDeveloperEditionAPIConnection, query);
-            handler.handle(userToConnectorObject(user));
+            ConnectorObject userObject = userToConnectorObject(user);
+            if(userObject != null){
+                handler.handle(userObject);
+            }
         }
 
 
@@ -417,7 +421,14 @@ public class UsersHandler extends AbstractHandler {
             throw new InvalidAttributeValueException("BoxUser Object not provided");
         }
 
-        BoxUser.Info info = user.getInfo();
+        BoxUser.Info info;
+
+        try {
+            info = user.getInfo();
+        } catch (BoxAPIException e) {
+            LOGGER.error("Unknown uid: {0}", user.getID());
+            return null;
+        }
 
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setUid(new Uid(user.getID()));

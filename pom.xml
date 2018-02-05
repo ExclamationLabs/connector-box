@@ -14,7 +14,7 @@
 
     <groupId>com.exclamationlabs.connid.box</groupId>
     <artifactId>connector-box</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>ConnId Box Identity connector</name>
     <packaging>jar</packaging>
 
