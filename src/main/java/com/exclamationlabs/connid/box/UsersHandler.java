@@ -394,7 +394,7 @@ public class UsersHandler extends AbstractHandler {
         info.getResource().updateInfo(info);
 
         List<String> attrGroups = getMultiAttr(attributes, ATTR_MEMBERSHIPS, String.class);
-        if(attrGroups != null){
+        if(!attrGroups.isEmpty()){
             attrGroups = new ArrayList<String>(attrGroups);
             Iterable<BoxGroupMembership.Info> memberships = user.getAllMemberships();
             for (BoxGroupMembership.Info membershipInfo : memberships){
