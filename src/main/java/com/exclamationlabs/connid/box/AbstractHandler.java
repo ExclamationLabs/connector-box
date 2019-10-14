@@ -12,6 +12,7 @@ import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueE
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -87,7 +88,7 @@ public class AbstractHandler {
                 return (List<T>) attr.getValue();
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     public static <T> void addAttr(ConnectorObjectBuilder builder, String attrName, T attrVal) {
