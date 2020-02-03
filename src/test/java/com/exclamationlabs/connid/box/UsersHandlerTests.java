@@ -11,6 +11,7 @@ import com.box.sdk.*;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.FileReader;
@@ -48,12 +49,16 @@ public class UsersHandlerTests {
     }
 
     private BoxUser.Info getTestUser() {
+        return getTestUser(testEmail);
+    }
+
+    private BoxUser.Info getTestUser(String email) {
         assertNotNull(boxAPIConnection);
 
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPIConnection);
 
         for (BoxUser.Info user : users) {
-            if (user.getLogin().equals(testEmail)) {
+            if (user.getLogin().equals(email)) {
                 return user;
             }
         }
@@ -73,12 +78,16 @@ public class UsersHandlerTests {
     }
 
     private void deleteTestUser() {
+        deleteTestUser(testEmail);
+    }
+
+    private void deleteTestUser(String email) {
         assertNotNull(boxAPIConnection);
 
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPIConnection);
 
         for (BoxUser.Info user : users) {
-            if (user.getLogin().equals(testEmail)) {
+            if (user.getLogin().equals(email)) {
                 user.getResource().delete(false, false);
             }
         }
@@ -149,6 +158,26 @@ public class UsersHandlerTests {
         assertEquals("test_user_updated", updatedUser.getName());
 
         deleteTestUser();
+    }
+
+    @Test
+    @Ignore("Test for updating email needs to be set up the target account with confirmed email in advance.")
+    public void updateEmail() {
+        String newEmail = "test-" + testEmail;
+
+        BoxUser.Info userInfo = getTestUser();
+
+        Set<Attribute> attributes = new HashSet<>();
+        attributes.add(AttributeBuilder.build("login", newEmail));
+
+        UsersHandler usersHandler = new UsersHandler(boxAPIConnection);
+        usersHandler.updateUser(
+                new Uid(userInfo.getID()),
+                attributes
+        );
+
+        BoxUser.Info updatedUser = getTestUser(newEmail);
+        assertNotNull(updatedUser);
     }
 
     @Test
