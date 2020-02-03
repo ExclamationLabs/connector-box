@@ -7,33 +7,28 @@
 
 package com.exclamationlabs.connid.box;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.util.*;
-
 import com.box.sdk.BoxConfig;
 import com.box.sdk.BoxDeveloperEditionAPIConnection;
+import com.box.sdk.DeveloperEditionEntityType;
+import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
-import org.identityconnectors.framework.api.operations.ResolveUsernameApiOp;
 import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.*;
-import org.identityconnectors.framework.common.objects.filter.AbstractFilterTranslator;
 import org.identityconnectors.framework.common.objects.filter.FilterTranslator;
 import org.identityconnectors.framework.spi.Configuration;
 import org.identityconnectors.framework.spi.Connector;
 import org.identityconnectors.framework.spi.ConnectorClass;
-import org.identityconnectors.framework.spi.operations.SchemaOp;
-import org.identityconnectors.framework.spi.operations.AuthenticateOp;
-import org.identityconnectors.framework.spi.operations.CreateOp;
-import org.identityconnectors.framework.spi.operations.DeleteOp;
-import org.identityconnectors.framework.spi.operations.SearchOp;
-import org.identityconnectors.framework.spi.operations.TestOp;
+import org.identityconnectors.framework.spi.operations.*;
 
-import org.identityconnectors.framework.spi.operations.UpdateAttributeValuesOp;
-import org.identityconnectors.framework.spi.operations.UpdateOp;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.util.ArrayList;
+import java.util.Set;
 
 
 @ConnectorClass(configurationClass = BoxConfiguration.class, displayNameKey = "Exclamation Labs Box Connector")
@@ -67,14 +62,38 @@ public class BoxConnector implements Connector,
     private void authenticateResource() {
         String configFilePath = getConfiguration().getConfigFilePath();
 
-        try(Reader reader = new FileReader(configFilePath)) {
+        try (Reader reader = new FileReader(configFilePath)) {
             boxConfig = BoxConfig.readFrom(reader);
         } catch (IOException ex) {
             LOG.error("Error loading Box JWT Auth Config File", ex);
         }
 
         try {
-            boxDeveloperEditionAPIConnection = BoxDeveloperEditionAPIConnection.getAppEnterpriseConnection(boxConfig);
+            if (StringUtil.isEmpty(getConfiguration().getHttpProxyHost())) {
+                boxDeveloperEditionAPIConnection = BoxDeveloperEditionAPIConnection.getAppEnterpriseConnection(boxConfig);
+            } else {
+                // Use HTTP Proxy for Box connection
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(getConfiguration().getHttpProxyHost(),
+                        getConfiguration().getHttpProxyPort()));
+                if (StringUtil.isNotEmpty(getConfiguration().getHttpProxyUser())) {
+                    boxDeveloperEditionAPIConnection = new BoxDeveloperEditionAPIConnection(boxConfig.getEnterpriseId(), DeveloperEditionEntityType.ENTERPRISE,
+                            boxConfig.getClientId(), boxConfig.getClientSecret(), boxConfig.getJWTEncryptionPreferences());
+                    boxDeveloperEditionAPIConnection.setProxyUsername(getConfiguration().getHttpProxyUser());
+
+                    if (getConfiguration().getHttpProxyPassword() != null) {
+                        getConfiguration().getHttpProxyPassword().access(new GuardedString.Accessor() {
+                            @Override
+                            public void access(char[] chars) {
+                                boxDeveloperEditionAPIConnection.setProxyPassword(String.valueOf(chars));
+                            }
+                        });
+                    }
+                }
+                boxDeveloperEditionAPIConnection = new BoxDeveloperEditionAPIConnection(boxConfig.getEnterpriseId(), DeveloperEditionEntityType.ENTERPRISE,
+                        boxConfig.getClientId(), boxConfig.getClientSecret(), boxConfig.getJWTEncryptionPreferences());
+                boxDeveloperEditionAPIConnection.setProxy(proxy);
+                boxDeveloperEditionAPIConnection.authenticate();
+            }
         } catch (Exception e) {
             throw new ConnectorIOException("Failed to connect", e);
         }
@@ -255,9 +274,5 @@ public class BoxConnector implements Connector,
         } else {
             throw new UnsupportedOperationException("Unsupported object class " + objectClass);
         }
-
-
-
-
     }
 }
