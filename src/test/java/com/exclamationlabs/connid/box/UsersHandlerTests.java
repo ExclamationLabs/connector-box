@@ -132,6 +132,26 @@ public class UsersHandlerTests {
     }
 
     @Test
+    public void updateName() {
+        BoxUser.Info userInfo = createTestUser();
+
+        Set<Attribute> attributes = new HashSet<>();
+        attributes.add(AttributeBuilder.build("__NAME__", "test_user_updated"));
+
+        UsersHandler usersHandler = new UsersHandler(boxAPIConnection);
+        usersHandler.updateUser(
+                new Uid(userInfo.getID()),
+                attributes
+        );
+
+        BoxUser.Info updatedUser = getTestUser();
+        assertNotNull(updatedUser);
+        assertEquals("test_user_updated", updatedUser.getName());
+
+        deleteTestUser();
+    }
+
+    @Test
     public void delete() {
         BoxUser.Info userInfo = createTestUser();
 

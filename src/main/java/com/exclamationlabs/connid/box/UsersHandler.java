@@ -328,6 +328,10 @@ public class UsersHandler extends AbstractHandler {
             throw new ConnectorIOException("Unable to confirm uid on box resource");
         }
 
+        String name = getStringAttr(attributes, "__NAME__");
+        if (name != null) {
+            info.setName(name);
+        }
         String attrAddress = getStringAttr(attributes, ATTR_ADDRESS);
         if (attrAddress != null) {
             info.setAddress(attrAddress);
