@@ -280,7 +280,7 @@ public class UsersHandler extends AbstractHandler {
         //Administrative status
         if ((getAttr(attributes, OperationalAttributes.ENABLE_NAME, Boolean.class)) != null) {
             Boolean status = getAttr(attributes, OperationalAttributes.ENABLE_NAME, Boolean.class);
-            if (status != null) {
+            if (status) {
                 createUserParams.setStatus(BoxUser.Status.ACTIVE);
             } else {
                 createUserParams.setStatus(BoxUser.Status.INACTIVE);
@@ -328,6 +328,10 @@ public class UsersHandler extends AbstractHandler {
             throw new ConnectorIOException("Unable to confirm uid on box resource");
         }
 
+        String name = getStringAttr(attributes, "__NAME__");
+        if (name != null) {
+            info.setName(name);
+        }
         String attrAddress = getStringAttr(attributes, ATTR_ADDRESS);
         if (attrAddress != null) {
             info.setAddress(attrAddress);
