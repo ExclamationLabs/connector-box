@@ -19,8 +19,7 @@ import java.io.Reader;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class UsersHandlerTests {
 
@@ -30,12 +29,12 @@ public class UsersHandlerTests {
 
     private static BoxConfig boxConfig = null;
 
-
+    // Please change this email for your environment
+    private static String testEmail = "test_user@testmail.com";
 
     @Before
     public void setup() {
-
-        try(Reader reader = new FileReader("test-config.json")) {
+        try (Reader reader = new FileReader("test-config.json")) {
             boxConfig = BoxConfig.readFrom(reader);
         } catch (IOException ex) {
             LOG.error("Error loading test credentials", ex);
@@ -48,30 +47,28 @@ public class UsersHandlerTests {
         assertNotNull(boxAPIConnection);
     }
 
-
     private BoxUser.Info getTestUser() {
         assertNotNull(boxAPIConnection);
 
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPIConnection);
 
         for (BoxUser.Info user : users) {
-            if (user.getLogin().equals("test_user@testmail.com")) {
+            if (user.getLogin().equals(testEmail)) {
                 return user;
             }
-
         }
 
         return null;
-
     }
 
     private BoxUser.Info createTestUser() {
         assertNotNull(boxAPIConnection);
 
         CreateUserParams params = new CreateUserParams();
-        params.setExternalAppUserId("test_user@testmail.com");
+        params.setStatus(BoxUser.Status.INACTIVE);
 
-        BoxUser.Info createdUserInfo = BoxUser.createAppUser(boxAPIConnection, "test_user", params);
+        BoxUser.Info createdUserInfo = BoxUser.createEnterpriseUser(boxAPIConnection,
+                testEmail, "test_user", params);
         return createdUserInfo;
     }
 
@@ -81,10 +78,9 @@ public class UsersHandlerTests {
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPIConnection);
 
         for (BoxUser.Info user : users) {
-            if (user.getLogin().equals("test_user@testmail.com")) {
+            if (user.getLogin().equals(testEmail)) {
                 user.getResource().delete(false, false);
             }
-
         }
     }
 
@@ -99,7 +95,9 @@ public class UsersHandlerTests {
         for (AttributeInfo attributeInfo : accountAttributesInfo) {
             if (!attributeInfo.isMultiValued() && attributeInfo.isCreateable() && attributeInfo.isReadable()) {
                 if (attributeInfo.getName().equals("login")) {
-                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "test_user@testmail.com"));
+                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), testEmail));
+                } else if (attributeInfo.getName().equals("__NAME__")) {
+                    accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "test_user"));
                 } else if (attributeInfo.getName().equals("timezone")) {
                     accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "Europe/Bratislava"));
                 } else if (attributeInfo.getName().equals("language")) {
@@ -114,27 +112,27 @@ public class UsersHandlerTests {
                     accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), 0));
                 }
                 accountAttributes.add(AttributeBuilder.build(OperationalAttributes.ENABLE_NAME, false));
-
             }
-
         }
 
         return accountAttributes;
     }
 
     @Test
-    public void create(){
+    public void create() {
         UsersHandler usersHandler = new UsersHandler(boxAPIConnection);
         usersHandler.createUser(getFixtureAccountAttributes());
 
-        assertNotNull(getTestUser());
+        BoxUser.Info createdUser = getTestUser();
+        assertNotNull(createdUser);
+
+        assertEquals(BoxUser.Status.INACTIVE, createdUser.getStatus());
 
         deleteTestUser();
     }
 
     @Test
     public void delete() {
-
         BoxUser.Info userInfo = createTestUser();
 
         UsersHandler usersHandler = new UsersHandler(boxAPIConnection);
@@ -145,8 +143,5 @@ public class UsersHandlerTests {
         );
 
         assertNull(getTestUser());
-
     }
-
-
 }

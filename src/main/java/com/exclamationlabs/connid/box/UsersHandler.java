@@ -280,7 +280,7 @@ public class UsersHandler extends AbstractHandler {
         //Administrative status
         if ((getAttr(attributes, OperationalAttributes.ENABLE_NAME, Boolean.class)) != null) {
             Boolean status = getAttr(attributes, OperationalAttributes.ENABLE_NAME, Boolean.class);
-            if (status != null) {
+            if (status) {
                 createUserParams.setStatus(BoxUser.Status.ACTIVE);
             } else {
                 createUserParams.setStatus(BoxUser.Status.INACTIVE);
