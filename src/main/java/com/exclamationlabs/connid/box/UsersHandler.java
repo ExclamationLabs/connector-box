@@ -7,12 +7,7 @@
 
 package com.exclamationlabs.connid.box;
 
-import com.box.sdk.BoxAPIException;
-import com.box.sdk.BoxDeveloperEditionAPIConnection;
-import com.box.sdk.BoxGroupMembership;
-import com.box.sdk.BoxGroup;
-import com.box.sdk.BoxUser;
-import com.box.sdk.CreateUserParams;
+import com.box.sdk.*;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
@@ -22,6 +17,7 @@ import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 import org.identityconnectors.framework.common.objects.filter.Filter;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -67,7 +63,7 @@ public class UsersHandler extends AbstractHandler {
         // mail
         AttributeInfoBuilder attrLoginBuilder = new AttributeInfoBuilder(ATTR_LOGIN);
         attrLoginBuilder.setRequired(true);
-        attrLoginBuilder.setUpdateable(false);
+        attrLoginBuilder.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrLoginBuilder.build());
         // role
         AttributeInfoBuilder attrRoleBuilder = new AttributeInfoBuilder(ATTR_ROLE);
@@ -395,7 +391,70 @@ public class UsersHandler extends AbstractHandler {
                 info.setRole(BoxUser.Role.USER);
         }
 
-        info.getResource().updateInfo(info);
+        // Handling email changing.
+        // When updating email, we need to add email alias with confirmed flag first.
+        // Then update the user with new email. If successful, the old email is moved to the alias.
+        // Finally, we need to delete the alias.
+        //
+        // https://community.box.com/t5/Platform-and-Development-Forum/How-to-change-user-s-primary-login-via-API/td-p/26483
+
+        String oldLogin = null;
+        String attrLogin = getStringAttr(attributes, ATTR_LOGIN);
+        // To avoid 403 forbidden error when updating with same email, we need to ignore case.
+        if (attrLogin != null && !attrLogin.equalsIgnoreCase(info.getLogin())) {
+            oldLogin = info.getLogin();
+            info.setLogin(attrLogin);
+        }
+        EmailAlias newEmailAlias = null;
+        if (oldLogin != null) {
+            try {
+                newEmailAlias = user.addEmailAlias(attrLogin, true);
+            } catch (BoxAPIException e) {
+                // Find email alias with new email because it might be added before
+                for (EmailAlias emailAlias : user.getEmailAliases()) {
+                    if (emailAlias.getEmail().equalsIgnoreCase(attrLogin)) {
+                        newEmailAlias = emailAlias;
+                        break;
+                    }
+                }
+                if (newEmailAlias == null) {
+                    LOGGER.error(e, "Failed to add email alias {0} for changing {1}. response: {2}", attrLogin, oldLogin, e.getResponse());
+                    throw e;
+                }
+            }
+        }
+
+        try {
+            info.getResource().updateInfo(info);
+        } catch (BoxAPIException e) {
+            LOGGER.error(e, "Failed to update an user. response: {0}", e.getResponse());
+
+            // If updating email was failed, the new email alias will remain.
+            // So we try to delete added new email alias for cleanup.
+            if (newEmailAlias != null) {
+                try {
+                    user.deleteEmailAlias(newEmailAlias.getID());
+                } catch (BoxAPIException e2) {
+                    LOGGER.error(e2, "Failed to clean up added email alias {0} for {1}. response: {2}", newEmailAlias.getEmail(), oldLogin, e.getResponse());
+                }
+            }
+            throw e;
+        }
+
+        // If updating email was successful, find the old email in the alias and delete it.
+        if (oldLogin != null) {
+            for (EmailAlias emailAlias : user.getEmailAliases()) {
+                if (emailAlias.getEmail().equalsIgnoreCase(oldLogin)) {
+                    try {
+                        user.deleteEmailAlias(emailAlias.getID());
+                        break;
+                    } catch (BoxAPIException e) {
+                        LOGGER.error(e, "Failed to delete old email: {0} response: {1}", newEmailAlias.getEmail(), e.getResponse());
+                        throw e;
+                    }
+                }
+            }
+        }
 
         List<String> attrGroups = getMultiAttr(attributes, ATTR_MEMBERSHIPS, String.class);
         if(!attrGroups.isEmpty()){
@@ -416,7 +475,6 @@ public class UsersHandler extends AbstractHandler {
         
         return uid;
     }
-
 
     public void deleteUser(ObjectClass objectClass, Uid uid, OperationOptions operationOptions) {
         if (uid == null) {
