@@ -181,28 +181,18 @@ public class UsersHandler extends AbstractHandler {
         return userSchemaInfo;
     }
 
-    public ArrayList<ConnectorObject> getAllUsers() {
-        ArrayList<ConnectorObject> connectorObjects = new ArrayList<>();
+    public void getAllUsers(ResultsHandler handler, OperationOptions ops) {
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxDeveloperEditionAPIConnection);
-
         for (BoxUser.Info user : users) {
-            connectorObjects.add(userToConnectorObject(user.getResource()));
+            handler.handle(userToConnectorObject(user.getResource()));
         }
-
-        return connectorObjects;
     }
 
     public void query(String query, ResultsHandler handler, OperationOptions ops) {
-
         LOGGER.info("UserHandler query VALUE: {0}", query);
 
         if (query == null) {
-
-            ArrayList<ConnectorObject> users = getAllUsers();
-
-            for (ConnectorObject userConnectorObject : users) {
-                handler.handle(userConnectorObject);
-            }
+            getAllUsers(handler, ops);
         } else {
             BoxUser user = new BoxUser(boxDeveloperEditionAPIConnection, query);
             ConnectorObject userObject = userToConnectorObject(user);
@@ -210,8 +200,6 @@ public class UsersHandler extends AbstractHandler {
                 handler.handle(userObject);
             }
         }
-
-
     }
 
     public Uid createUser(Set<Attribute> attributes) {

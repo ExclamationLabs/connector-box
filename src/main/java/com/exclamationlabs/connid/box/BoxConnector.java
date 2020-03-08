@@ -258,18 +258,12 @@ public class BoxConnector implements Connector,
 
 
         if (objectClass.is(ObjectClass.ACCOUNT_NAME)) {
-
             UsersHandler usersHandler = new UsersHandler(boxDeveloperEditionAPIConnection);
             usersHandler.query(query, handler, options);
 
-
         } else if (objectClass.is(ObjectClass.GROUP_NAME)) {
             GroupsHandler groupsHandler = new GroupsHandler(boxDeveloperEditionAPIConnection);
-            ArrayList<ConnectorObject> groups = groupsHandler.getAllGroups();
-
-            for (ConnectorObject groupConnectorObject : groups) {
-                handler.handle(groupConnectorObject);
-            }
+            groupsHandler.query(query, handler, options);
 
         } else {
             throw new UnsupportedOperationException("Unsupported object class " + objectClass);
