@@ -103,9 +103,9 @@ public class UsersHandlerTests {
 
         for (AttributeInfo attributeInfo : accountAttributesInfo) {
             if (!attributeInfo.isMultiValued() && attributeInfo.isCreateable() && attributeInfo.isReadable()) {
-                if (attributeInfo.getName().equals("login")) {
+                if (attributeInfo.getName().equals(Name.NAME)) {
                     accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), testEmail));
-                } else if (attributeInfo.getName().equals("__NAME__")) {
+                } else if (attributeInfo.getName().equals("name")) {
                     accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "test_user"));
                 } else if (attributeInfo.getName().equals("timezone")) {
                     accountAttributes.add(AttributeBuilder.build(attributeInfo.getName(), "Europe/Bratislava"));
@@ -145,7 +145,7 @@ public class UsersHandlerTests {
         BoxUser.Info userInfo = createTestUser();
 
         Set<Attribute> attributes = new HashSet<>();
-        attributes.add(AttributeBuilder.build("__NAME__", "test_user_updated"));
+        attributes.add(AttributeBuilder.build("name", "test_user_updated"));
 
         UsersHandler usersHandler = new UsersHandler(boxAPIConnection);
         usersHandler.updateUser(
@@ -168,7 +168,7 @@ public class UsersHandlerTests {
         BoxUser.Info userInfo = getTestUser();
 
         Set<Attribute> attributes = new HashSet<>();
-        attributes.add(AttributeBuilder.build("login", newEmail));
+        attributes.add(AttributeBuilder.build(Name.NAME, newEmail));
 
         UsersHandler usersHandler = new UsersHandler(boxAPIConnection);
         usersHandler.updateUser(

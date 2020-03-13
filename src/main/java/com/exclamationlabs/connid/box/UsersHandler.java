@@ -28,7 +28,7 @@ public class UsersHandler extends AbstractHandler {
     private static final String ATTR_LOGIN = "login";
     private static final String ATTR_NAME = "name";
     private static final String ATTR_ROLE = "role";
-    private static final String ATTR_ID = "userID";
+    private static final String ATTR_EXTERNAL_APP_USER_ID = "external_app_user_id";
     private static final String ATTR_LANGUAGE = "language";
     private static final String ATTR_SYNC = "is_sync_enabled";
     private static final String ATTR_TITLE = "job_title";
@@ -60,21 +60,27 @@ public class UsersHandler extends AbstractHandler {
     public ObjectClassInfo getUserSchema() {
 
         ObjectClassInfoBuilder ocBuilder = new ObjectClassInfoBuilder();
+        // name
+        AttributeInfoBuilder attrNameBuilder = new AttributeInfoBuilder(ATTR_NAME);
+        attrNameBuilder.setRequired(true);
+        attrNameBuilder.setUpdateable(true);
+        ocBuilder.addAttributeInfo(attrNameBuilder.build());
         // mail
-        AttributeInfoBuilder attrLoginBuilder = new AttributeInfoBuilder(ATTR_LOGIN);
+        AttributeInfoBuilder attrLoginBuilder = new AttributeInfoBuilder(Name.NAME);
         attrLoginBuilder.setRequired(true);
         attrLoginBuilder.setUpdateable(true);
+        attrLoginBuilder.setNativeName(ATTR_LOGIN);
         ocBuilder.addAttributeInfo(attrLoginBuilder.build());
         // role
         AttributeInfoBuilder attrRoleBuilder = new AttributeInfoBuilder(ATTR_ROLE);
         attrRoleBuilder.setUpdateable(true);
         attrRoleBuilder.setReturnedByDefault(false);
         ocBuilder.addAttributeInfo(attrRoleBuilder.build());
-        // explicit_ID
-        AttributeInfoBuilder attrUserId = new AttributeInfoBuilder(ATTR_ID);
-        attrUserId.setUpdateable(false);
-        attrUserId.setReturnedByDefault(false);
-        ocBuilder.addAttributeInfo(attrUserId.build());
+        // external_app_user_id
+        AttributeInfoBuilder attrExternalAppUserId = new AttributeInfoBuilder(ATTR_EXTERNAL_APP_USER_ID);
+        attrExternalAppUserId.setUpdateable(false);
+        attrExternalAppUserId.setReturnedByDefault(false);
+        ocBuilder.addAttributeInfo(attrExternalAppUserId.build());
         // language
         AttributeInfoBuilder attrLanguageBuilder = new AttributeInfoBuilder(ATTR_LANGUAGE);
         attrLanguageBuilder.setUpdateable(true);
@@ -216,13 +222,12 @@ public class UsersHandler extends AbstractHandler {
         CreateUserParams createUserParams = new CreateUserParams();
 
 
-        String login = getStringAttr(attributes, ATTR_LOGIN);
+        String login = getStringAttr(attributes, Name.NAME);
         if (StringUtil.isBlank(login)) {
-
             throw new InvalidAttributeValueException("Missing mandatory attribute " + ATTR_LOGIN);
         }
 
-        String name = getStringAttr(attributes, "__NAME__");
+        String name = getStringAttr(attributes, ATTR_NAME);
         if (StringUtil.isBlank(name)) {
             throw new InvalidAttributeValueException("Missing mandatory attribute " + ATTR_NAME);
         }
@@ -237,11 +242,10 @@ public class UsersHandler extends AbstractHandler {
             createUserParams.setCanSeeManagedUsers(canSeeManagedUsers);
         }
 
-//      Let the username be generated
-//        String externalAppUserId = getStringAttr(attributes, ATTR_ID);
-//        if (externalAppUserId != null) {
-//            createUserParams.setExternalAppUserId(externalAppUserId);
-//        }
+        String externalAppUserId = getStringAttr(attributes, ATTR_EXTERNAL_APP_USER_ID);
+        if (externalAppUserId != null) {
+            createUserParams.setExternalAppUserId(externalAppUserId);
+        }
 
         Boolean isExemptFromDeviceLimits = getBoolAttr(attributes, ATTR_DEVICELIMITS);
         if (isExemptFromDeviceLimits != null) {
@@ -324,7 +328,7 @@ public class UsersHandler extends AbstractHandler {
             throw new ConnectorIOException("Unable to confirm uid on box resource");
         }
 
-        String name = getStringAttr(attributes, "__NAME__");
+        String name = getStringAttr(attributes, ATTR_NAME);
         if (name != null) {
             info.setName(name);
         }
@@ -335,10 +339,6 @@ public class UsersHandler extends AbstractHandler {
         Boolean attrManaged = getBoolAttr(attributes, ATTR_MANAGED);
         if (attrManaged != null) {
             info.setCanSeeManagedUsers(attrManaged);
-        }
-        String attrID = getStringAttr(attributes, ATTR_ID);
-        if (attrID != null) {
-            info.setExternalAppUserId(attrID);
         }
         Boolean attrDeviceLimits = getBoolAttr(attributes, ATTR_DEVICELIMITS);
         if (attrDeviceLimits != null) {
@@ -399,7 +399,7 @@ public class UsersHandler extends AbstractHandler {
         // https://community.box.com/t5/Platform-and-Development-Forum/How-to-change-user-s-primary-login-via-API/td-p/26483
 
         String oldLogin = null;
-        String attrLogin = getStringAttr(attributes, ATTR_LOGIN);
+        String attrLogin = getStringAttr(attributes, Name.NAME);
         // To avoid 403 forbidden error when updating with same email, we need to ignore case.
         if (attrLogin != null && !attrLogin.equalsIgnoreCase(info.getLogin())) {
             oldLogin = info.getLogin();
@@ -501,10 +501,8 @@ public class UsersHandler extends AbstractHandler {
 
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
         builder.setUid(new Uid(user.getID()));
-
-        builder.setName(info.getName());
-        builder.addAttribute(ATTR_ID, info.getID());
-        builder.addAttribute(ATTR_LOGIN, info.getLogin());
+        builder.setName(info.getLogin());
+        builder.addAttribute(ATTR_NAME, info.getName());
         builder.addAttribute(ATTR_ADDRESS, info.getAddress());
         builder.addAttribute(ATTR_DEVICELIMITS, info.getIsExemptFromDeviceLimits());
         builder.addAttribute(ATTR_LANGUAGE, info.getLanguage());
@@ -517,6 +515,7 @@ public class UsersHandler extends AbstractHandler {
         builder.addAttribute(ATTR_CREATED, info.getCreatedAt().getTime());
         builder.addAttribute(ATTR_MODIFIED, info.getModifiedAt().getTime());
         builder.addAttribute(ATTR_USED, info.getSpaceUsed());
+        builder.addAttribute(ATTR_EXTERNAL_APP_USER_ID, info.getExternalAppUserId());
 
 
         if (info.getStatus().equals(BoxUser.Status.ACTIVE)) {
