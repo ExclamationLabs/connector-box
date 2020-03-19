@@ -176,6 +176,9 @@ public class UsersHandler extends AbstractHandler {
         attrMembership.setUpdateable(true);
         ocBuilder.addAttributeInfo(attrMembership.build());
 
+        // __ENABLE__
+        ocBuilder.addAttributeInfo(OperationalAttributeInfos.ENABLE);
+
         ObjectClassInfo userSchemaInfo = ocBuilder.build();
         LOGGER.info("The constructed User core schema: {0}", userSchemaInfo);
         return userSchemaInfo;
