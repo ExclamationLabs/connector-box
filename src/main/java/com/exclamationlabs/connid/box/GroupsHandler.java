@@ -179,14 +179,25 @@ public class GroupsHandler extends AbstractHandler {
         return new Uid(groupInfo.getID());
     }
 
-    public ArrayList<ConnectorObject> getAllGroups() {
-        ArrayList<ConnectorObject> connectorObjects = new ArrayList<>();
+    public void getAllGroups(ResultsHandler handler, OperationOptions ops) {
         Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxDeveloperEditionAPIConnection);
         for (BoxGroup.Info groupInfo : groups) {
-            connectorObjects.add(groupToConnectorObject(groupInfo.getResource()));
+            handler.handle(groupToConnectorObject(groupInfo.getResource()));
         }
+    }
 
-        return connectorObjects;
+    public void query(String query, ResultsHandler handler, OperationOptions ops) {
+        LOGGER.info("GroupsHandler query VALUE: {0}", query);
+
+        if (query == null) {
+            getAllGroups(handler, ops);
+        } else {
+            BoxGroup group = new BoxGroup(boxDeveloperEditionAPIConnection, query);
+            ConnectorObject groupObject = groupToConnectorObject(group);
+            if(groupObject != null){
+                handler.handle(groupObject);
+            }
+        }
     }
 
     public Uid createGroup(Set<Attribute> attributes) {
