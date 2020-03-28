@@ -10,240 +10,431 @@ package com.exclamationlabs.connid.box;
 import com.box.sdk.*;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
+import org.identityconnectors.framework.common.exceptions.AlreadyExistsException;
 import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueException;
 import org.identityconnectors.framework.common.objects.*;
-import org.identityconnectors.framework.common.objects.filter.Filter;
 
-import java.util.ArrayList;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GroupsHandler extends AbstractHandler {
+
     private static final Log LOGGER = Log.getLog(GroupsHandler.class);
 
-    private static final String ATTR_NAME = "name";
-    private static final String ATTR_ID = "groupID";
-    private static final String ATTR_PROVENANCE = "provenance";
-    private static final String ATTR_IDENTIFIER = "external_sync_identifier";
-    private static final String ATTR_DESCRIPTION = "description";
-    private static final String ATTR_INVITABILITY = "invitability_level";
-    private static final String ATTR_VIEWABILITY = "member_viewability_level";
-    private static final String ATTR_CREATED = "created_at";
-    private static final String ATTR_MODIFIED = "modified_at";
-    private static final String ATTR_SYNC = "is_sync_enabled";
-    private static final String ATTR_MEMBERS = "member";
-    private static final String ATTR_ADMINS = "admin";
-    private static final String ATTR_CO_OWNER = "co_owner";
-    private static final String ATTR_EDITOR = "editor";
-    private static final String ATTR_PREVIEWER = "previewer";
-    private static final String ATTR_PREVIEWER_UPLOADER = "previewer_uploader";
-    private static final String ATTR_UPLOADER = "uploader";
-    private static final String ATTR_VIEWER = "viewer";
-    private static final String ATTR_VIEWER_UPLOADER = "viewer_uploader";
+    // Use the type of the Box Group resource:
+    // https://developer.box.com/reference/resources/group/
+    public static final ObjectClass OBJECT_CLASS_GROUP = new ObjectClass("group");
 
-    private BoxDeveloperEditionAPIConnection boxDeveloperEditionAPIConnection;
+    // Mini
+    protected static final String ATTR_GROUP_TYPE = "group_type";
+    protected static final String ATTR_NAME = "name";
 
-    public GroupsHandler(BoxDeveloperEditionAPIConnection boxDeveloperEditionAPIConnection) {
-        this.boxDeveloperEditionAPIConnection = boxDeveloperEditionAPIConnection;
+    // Standard
+    protected static final String ATTR_CREATED_AT = "created_at";
+    protected static final String ATTR_MODIFIED_AT = "modified_at";
+
+    // Full
+    protected static final String ATTR_DESCRIPTION = "description";
+    protected static final String ATTR_EXTERNAL_SYNC_IDENTIFIER = "external_sync_identifier";
+    protected static final String ATTR_INVITABILITY_LEVEL = "invitability_level";
+    protected static final String ATTR_MEMBER_VIEWABILITY_LEVEL = "member_viewability_level";
+    protected static final String ATTR_PROVENANCE = "provenance";
+
+    // Association
+    // There are two roles of members: "member" and "admin"
+    // https://developer.box.com/reference/resources/group-membership/#param-role
+    protected static final String ATTR_MEMBER = "member";
+    protected static final String ATTR_ADMIN = "admin";
+
+    // Collaborations for group
+    protected static final String ATTR_CO_OWNER = "co_owner";
+    protected static final String ATTR_EDITOR = "editor";
+    protected static final String ATTR_PREVIEWER = "previewer";
+    protected static final String ATTR_PREVIEWER_UPLOADER = "previewer_uploader";
+    protected static final String ATTR_UPLOADER = "uploader";
+    protected static final String ATTR_VIEWER = "viewer";
+    protected static final String ATTR_VIEWER_UPLOADER = "viewer_uploader";
+
+    protected static final String[] MINI_ATTRS = new String[]{
+            ATTR_GROUP_TYPE,
+            ATTR_NAME
+    };
+    protected static final String[] STANDARD_ATTRS = new String[]{
+            ATTR_CREATED_AT,
+            ATTR_MODIFIED_AT,
+    };
+    protected static final String[] FULL_ATTRS = new String[]{
+            ATTR_DESCRIPTION,
+            ATTR_EXTERNAL_SYNC_IDENTIFIER,
+            ATTR_INVITABILITY_LEVEL,
+            ATTR_MEMBER_VIEWABILITY_LEVEL,
+            ATTR_PROVENANCE
+    };
+    protected static final Set<String> STANDARD_ATTRS_SET =
+            Collections.unmodifiableSet(Stream.of(
+                    MINI_ATTRS,
+                    STANDARD_ATTRS
+            ).flatMap(Arrays::stream).collect(Collectors.toSet()));
+    protected static final Set<String> FULL_ATTRS_SET =
+            Collections.unmodifiableSet(Stream.of(
+                    MINI_ATTRS,
+                    STANDARD_ATTRS,
+                    FULL_ATTRS
+            ).flatMap(Arrays::stream).collect(Collectors.toSet()));
+
+    public GroupsHandler(String instanceName, BoxAPIConnection boxAPI) {
+        super(instanceName, boxAPI);
     }
-
 
     public ObjectClassInfo getGroupSchema() {
-
         ObjectClassInfoBuilder builder = new ObjectClassInfoBuilder();
+        builder.setType(OBJECT_CLASS_GROUP.getObjectClassValue());
 
-        builder.setType(ObjectClass.GROUP_NAME);
+        // Base
 
-        AttributeInfoBuilder attrOwner = new AttributeInfoBuilder(ATTR_CO_OWNER);
-        attrOwner.setMultiValued(true);
-        attrOwner.setUpdateable(true);
-        builder.addAttributeInfo(attrOwner.build());
+        // id (__UID__)
+        // Caution: Don't define a schema for "id" of group because the name conflicts with midPoint side.
+//        builder.addAttributeInfo(
+//                AttributeInfoBuilder.define(Uid.NAME)
+//                        .setRequired(false) // Must be optional. It is not present for create operations
+//                        .setCreateable(false)
+//                        .setUpdateable(false)
+//                        .setNativeName(ATTR_ID)
+//                        .build()
+//        );
 
-        AttributeInfoBuilder attrEditor = new AttributeInfoBuilder(ATTR_EDITOR);
-        attrEditor.setMultiValued(true);
-        attrEditor.setUpdateable(true);
-        builder.addAttributeInfo(attrEditor.build());
+        // type (read-only)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_TYPE)
+                .setCreateable(false)
+                .setUpdateable(false)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_TYPE))
+                .build());
 
-        AttributeInfoBuilder attrPreviewer = new AttributeInfoBuilder(ATTR_PREVIEWER);
-        attrPreviewer.setMultiValued(true);
-        attrPreviewer.setUpdateable(true);
-        attrPreviewer.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrPreviewer.build());
+        // Mini
 
-        AttributeInfoBuilder attrPrevUpl = new AttributeInfoBuilder(ATTR_PREVIEWER_UPLOADER);
-        attrPrevUpl.setMultiValued(true);
-        attrPrevUpl.setUpdateable(true);
-        attrPrevUpl.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrPrevUpl.build());
+        // group_type (read-only)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_GROUP_TYPE)
+                .setCreateable(false)
+                .setUpdateable(false)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_GROUP_TYPE))
+                .build());
 
-        AttributeInfoBuilder attrUploader = new AttributeInfoBuilder(ATTR_UPLOADER);
-        attrUploader.setMultiValued(true);
-        attrUploader.setUpdateable(true);
-        attrUploader.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrUploader.build());
+        // name (__NAME__)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(Name.NAME)
+                .setRequired(true)
+                .setNativeName(ATTR_NAME)
+                .setSubtype(AttributeInfo.Subtypes.STRING_CASE_IGNORE)
+                .build());
 
-        AttributeInfoBuilder attrViewer = new AttributeInfoBuilder(ATTR_VIEWER);
-        attrViewer.setMultiValued(true);
-        attrViewer.setUpdateable(true);
-        attrViewer.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrViewer.build());
+        // Standard
 
-        AttributeInfoBuilder attrViewUpl = new AttributeInfoBuilder(ATTR_VIEWER_UPLOADER);
-        attrViewUpl.setMultiValued(true);
-        attrViewUpl.setUpdateable(true);
-        attrViewUpl.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrViewUpl.build());
+        // created_at (read-only)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_CREATED_AT)
+                .setType(ZonedDateTime.class)
+                .setCreateable(false)
+                .setUpdateable(false)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_CREATED_AT))
+                .build());
 
-        AttributeInfoBuilder attrProvenanceBuilder = new AttributeInfoBuilder(ATTR_PROVENANCE);
-        attrProvenanceBuilder.setUpdateable(true);
-        attrProvenanceBuilder.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrProvenanceBuilder.build());
+        // modified_at (read-only)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_MODIFIED_AT)
+                .setType(ZonedDateTime.class)
+                .setCreateable(false)
+                .setUpdateable(false)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_MODIFIED_AT))
+                .build());
 
-        AttributeInfoBuilder attrGroupId = new AttributeInfoBuilder(ATTR_ID);
-        attrGroupId.setUpdateable(false);
-        builder.addAttributeInfo(attrGroupId.build());
+        // Full
 
-        AttributeInfoBuilder attrMembers = new AttributeInfoBuilder(ATTR_MEMBERS);
-        attrMembers.setMultiValued(true);
-        attrMembers.setUpdateable(true);
-        builder.addAttributeInfo(attrMembers.build());
+        // description
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_DESCRIPTION)
+                .build());
 
-        AttributeInfoBuilder attrAdmins = new AttributeInfoBuilder(ATTR_ADMINS);
-        attrAdmins.setMultiValued(true);
-        attrAdmins.setUpdateable(true);
-        builder.addAttributeInfo(attrAdmins.build());
+        // external_sync_identifier
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_EXTERNAL_SYNC_IDENTIFIER)
+                .build());
 
-        AttributeInfoBuilder attrIdentifierBuilder = new AttributeInfoBuilder(ATTR_IDENTIFIER);
-        attrIdentifierBuilder.setUpdateable(true);
-        attrIdentifierBuilder.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrIdentifierBuilder.build());
+        // invitability_level
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_INVITABILITY_LEVEL)
+                .build());
 
-        AttributeInfoBuilder attrDescriptionBuilder = new AttributeInfoBuilder(ATTR_DESCRIPTION);
-        attrDescriptionBuilder.setUpdateable(true);
-        attrDescriptionBuilder.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrDescriptionBuilder.build());
+        // member_viewability_level
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_MEMBER_VIEWABILITY_LEVEL)
+                .build());
 
-        AttributeInfoBuilder attrInvitabilityBuilder = new AttributeInfoBuilder(ATTR_INVITABILITY);
-        attrInvitabilityBuilder.setUpdateable(true);
-        attrInvitabilityBuilder.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrInvitabilityBuilder.build());
+        // provenance
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_PROVENANCE)
+                .build());
 
-        AttributeInfoBuilder attrViewabilityBuilder = new AttributeInfoBuilder(ATTR_VIEWABILITY);
-        attrViewabilityBuilder.setUpdateable(true);
-        attrViewabilityBuilder.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrViewabilityBuilder.build());
-        
-        AttributeInfoBuilder attrIsSyncEnabledBuilder = new AttributeInfoBuilder(ATTR_SYNC, Boolean.class);
-        attrIsSyncEnabledBuilder.setUpdateable(true);
-        attrIsSyncEnabledBuilder.setReturnedByDefault(false);
-        builder.addAttributeInfo(attrIsSyncEnabledBuilder.build());
+        // Association
 
-        AttributeInfoBuilder attrCreated = new AttributeInfoBuilder(ATTR_CREATED);
-        attrCreated.setUpdateable(false);
-        attrCreated.setCreateable(false);
-        builder.addAttributeInfo(attrCreated.build());
+        // Group member(member)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_MEMBER)
+                .setMultiValued(true)
+                .build());
 
-        AttributeInfoBuilder attrModified = new AttributeInfoBuilder(ATTR_MODIFIED);
-        attrModified.setUpdateable(false);
-        attrModified.setCreateable(false);
-        builder.addAttributeInfo(attrModified.build());
+        // Group member(admin)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_ADMIN)
+                .setMultiValued(true)
+                .build());
+
+        // Collaborations for group
+        // TODO: Although define schemas, they aren't implemented yet
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_CO_OWNER)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_EDITOR)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_PREVIEWER)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_PREVIEWER_UPLOADER)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_UPLOADER)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_VIEWER)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_VIEWER_UPLOADER)
+                .setMultiValued(true)
+                .setReturnedByDefault(false)
+                .build());
 
         ObjectClassInfo groupSchemaInfo = builder.build();
-        LOGGER.info("The constructed group schema representation: {0}", groupSchemaInfo);
-        return groupSchemaInfo;
 
+        LOGGER.info("[{0}] The constructed group schema representation: {1}", instanceName, groupSchemaInfo);
+
+        return groupSchemaInfo;
     }
 
-
-    public Uid updateGroup(Set<Attribute> attributes) {
-
+    public Uid createGroup(Set<Attribute> attributes) {
         if (attributes == null || attributes.isEmpty()) {
             throw new InvalidAttributeValueException("attributes not provided or empty");
         }
 
-        String name = getStringAttr(attributes, "__NAME__");
+        String name = null;
+        String description = null;
+        String externalSyncIdentifier = null;
+        String invitabilityLevel = null;
+        String memberViewabilityLevel = null;
+        String provenance = null;
+
+        for (Attribute attr : attributes) {
+            if (attr.getName().equals(Name.NAME)) {
+                name = AttributeUtil.getStringValue(attr);
+            } else if (attr.getName().equals(ATTR_DESCRIPTION)) {
+                description = AttributeUtil.getStringValue(attr);
+
+            } else if (attr.getName().equals(ATTR_EXTERNAL_SYNC_IDENTIFIER)) {
+                externalSyncIdentifier = AttributeUtil.getStringValue(attr);
+
+            } else if (attr.getName().equals(ATTR_INVITABILITY_LEVEL)) {
+                invitabilityLevel = AttributeUtil.getStringValue(attr);
+
+            } else if (attr.getName().equals(ATTR_MEMBER_VIEWABILITY_LEVEL)) {
+                memberViewabilityLevel = AttributeUtil.getStringValue(attr);
+
+            } else if (attr.getName().equals(ATTR_PROVENANCE)) {
+                provenance = AttributeUtil.getStringValue(attr);
+            }
+        }
+
         if (StringUtil.isBlank(name)) {
             throw new InvalidAttributeValueException("Missing mandatory attribute " + ATTR_NAME);
         }
 
+        try {
+            BoxGroup.Info groupInfo = BoxGroup.createGroup(
+                    boxAPI,
+                    name,
+                    provenance,
+                    externalSyncIdentifier,
+                    description,
+                    invitabilityLevel,
+                    memberViewabilityLevel
+            );
+            return new Uid(groupInfo.getID(), new Name(name));
 
-        BoxGroup.Info groupInfo = BoxGroup.createGroup(
-                boxDeveloperEditionAPIConnection,
-                name,
-                getStringAttr(attributes, ATTR_PROVENANCE),
-                getStringAttr(attributes, ATTR_IDENTIFIER),
-                getStringAttr(attributes, ATTR_DESCRIPTION),
-                getStringAttr(attributes, ATTR_INVITABILITY),
-                getStringAttr(attributes, ATTR_VIEWABILITY)
-        );
-
-        return new Uid(groupInfo.getID());
-    }
-
-    public void getAllGroups(ResultsHandler handler, OperationOptions ops) {
-        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxDeveloperEditionAPIConnection);
-        for (BoxGroup.Info groupInfo : groups) {
-            handler.handle(groupToConnectorObject(groupInfo.getResource()));
+        } catch (BoxAPIException e) {
+            if (isGroupAlreadyExistsError(e)) {
+                throw new AlreadyExistsException(e);
+            }
+            throw e;
         }
     }
 
-    public void query(String query, ResultsHandler handler, OperationOptions ops) {
-        LOGGER.info("GroupsHandler query VALUE: {0}", query);
+    public Set<AttributeDelta> updateGroup(Uid uid, Set<AttributeDelta> modifications) {
+        if (modifications == null || modifications.isEmpty()) {
+            throw new InvalidAttributeValueException("attributes not provided or empty");
+        }
+
+        BoxGroup group = new BoxGroup(boxAPI, uid.getUidValue());
+        BoxGroup.Info info = group.new Info();
+
+        for (AttributeDelta delta : modifications) {
+            if (delta.getName().equals(ATTR_NAME)) {
+                info.setName(getStringValue(delta));
+
+            } else if (delta.getName().equals(ATTR_PROVENANCE)) {
+                info.setProvenance(getStringValue(delta));
+
+            } else if (delta.getName().equals(ATTR_EXTERNAL_SYNC_IDENTIFIER)) {
+                info.setExternalSyncIdentifier(getStringValue(delta));
+
+            } else if (delta.getName().equals(ATTR_DESCRIPTION)) {
+                info.setDescription(getStringValue(delta));
+
+            } else if (delta.getName().equals(ATTR_INVITABILITY_LEVEL)) {
+                info.setInvitabilityLevel(getStringValue(delta));
+
+            } else if (delta.getName().equals(ATTR_MEMBER_VIEWABILITY_LEVEL)) {
+                info.setMemberViewabilityLevel(getStringValue(delta));
+            }
+        }
+
+        try {
+            info.getResource().updateInfo(info);
+
+            // Box doesn't support to modify group's id
+            return null;
+
+        } catch (BoxAPIException e) {
+            if (isNotFoundError(e)) {
+                throw newUnknownUidException(uid, OBJECT_CLASS_GROUP, e);
+            }
+            throw e;
+        }
+    }
+
+    public void query(BoxFilter query, ResultsHandler handler, OperationOptions ops) {
+        LOGGER.info("[{0}] GroupsHandler query VALUE: {1}", instanceName, query);
+
+        Set<String> attributesToGet = createFullAttributesToGetSet(STANDARD_ATTRS_SET, ops);
 
         if (query == null) {
-            getAllGroups(handler, ops);
+            getAllGroups(handler, ops, attributesToGet);
         } else {
-            BoxGroup group = new BoxGroup(boxDeveloperEditionAPIConnection, query);
-            ConnectorObject groupObject = groupToConnectorObject(group);
-            if(groupObject != null){
-                handler.handle(groupObject);
+            if (query.isByUid()) {
+                getGroup(query.uid, handler, ops, attributesToGet);
+            } else {
+                getGroup(query.name, handler, ops, attributesToGet);
             }
         }
     }
 
-    public Uid createGroup(Set<Attribute> attributes) {
-        return updateGroup(attributes);
-    }
-
-    public void deleteGroup(Uid uid)  {
-        BoxGroup group = new BoxGroup(boxDeveloperEditionAPIConnection, uid.toString());
-        group.delete();
-    }
-
-    public ConnectorObject groupToConnectorObject(BoxGroup group) {
-        if (group == null) {
-            throw new InvalidAttributeValueException("BoxGroup Object not provided");
+    private void getAllGroups(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxAPI, attributesToGet.toArray(new String[attributesToGet.size()]));
+        for (BoxGroup.Info groupInfo : groups) {
+            handler.handle(groupToConnectorObject(groupInfo, attributesToGet));
         }
+    }
 
-        BoxGroup.Info info = group.getInfo();
+    private void getGroup(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+        BoxGroup group = new BoxGroup(boxAPI, uid.getUidValue());
+        try {
+            // Fetch a group
+            BoxGroup.Info info = group.getInfo(attributesToGet.toArray(new String[attributesToGet.size()]));
 
+            handler.handle(groupToConnectorObject(info, attributesToGet));
+
+        } catch (BoxAPIException e) {
+            if (isNotFoundError(e)) {
+                LOGGER.warn("[{0}] Unknown uid: {1}", instanceName, group.getID());
+                // It should not throw any exception
+                return;
+            }
+            throw e;
+        }
+    }
+
+    private void getGroup(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+        // "List groups for enterprise" doesn't support find by "name" according to the following API spec:
+        // https://developer.box.com/reference/get-groups/
+        // But it supports query filter internally and the SDK has utility method: BoxGroup.getAllGroupsByName.
+        // However, the SDK doesn't have a method with fields.
+        // So we call own getAllGroupsByName method as the workaround.
+        Iterable<BoxGroup.Info> groups = AdditionalAPI.getAllGroupsByName(boxAPI, name.getNameValue(),
+                attributesToGet.toArray(new String[attributesToGet.size()]));
+
+        for (BoxGroup.Info info : groups) {
+            if (info.getName().equalsIgnoreCase(name.getNameValue())) {
+                handler.handle(groupToConnectorObject(info, attributesToGet));
+                break;
+            }
+        }
+    }
+
+    public void deleteGroup(Uid uid) {
+        try {
+            BoxGroup group = new BoxGroup(boxAPI, uid.getUidValue());
+            group.delete();
+
+        } catch (BoxAPIException e) {
+            if (isNotFoundError(e)) {
+                throw newUnknownUidException(uid, OBJECT_CLASS_GROUP, e);
+            }
+            throw e;
+        }
+    }
+
+    private ConnectorObject groupToConnectorObject(BoxGroup.Info info, Set<String> attributesToGet) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
-        builder.setUid(new Uid(group.getID()));
 
+        builder.setObjectClass(OBJECT_CLASS_GROUP);
+
+        builder.setUid(new Uid(info.getID(), new Name(info.getName())));
         builder.setName(info.getName());
-        builder.addAttribute(ATTR_ID, info.getID());
 
-        builder.addAttribute(ATTR_PROVENANCE, info.getProvenance());
-        builder.addAttribute(ATTR_DESCRIPTION, info.getDescription());
-        builder.addAttribute(ATTR_SYNC, info.getExternalSyncIdentifier());
-        builder.addAttribute(ATTR_INVITABILITY, info.getInvitabilityLevel());
-        builder.addAttribute(ATTR_VIEWABILITY, info.getMemberViewabilityLevel());
-        builder.addAttribute(ATTR_CREATED, info.getCreatedAt().getTime());
-        builder.addAttribute(ATTR_MODIFIED, info.getModifiedAt().getTime());
-
-        Iterable<BoxGroupMembership.Info> memberships = group.getAllMemberships();
-        for (BoxGroupMembership.Info membershipInfo : memberships) {
-            if (membershipInfo.getRole().equals(BoxUser.Role.USER) ) {
-                builder.addAttribute(ATTR_MEMBERS, membershipInfo.getID());
-            } else if (membershipInfo.getRole().equals(BoxUser.Role.ADMIN) ) {
-                builder.addAttribute(ATTR_ADMINS, membershipInfo.getID());
-
-                //I don't know if this is right
-            } else if (membershipInfo.getRole().equals(BoxUser.Role.COADMIN) ) {
-                builder.addAttribute(ATTR_CO_OWNER, membershipInfo.getID());
-            }
-
+        // Standard
+        if (attributesToGet.contains(ATTR_CREATED_AT)) {
+            builder.addAttribute(ATTR_CREATED_AT, toZonedDateTime(info.getCreatedAt()));
+        }
+        if (attributesToGet.contains(ATTR_MODIFIED_AT)) {
+            builder.addAttribute(ATTR_MODIFIED_AT, toZonedDateTime(info.getModifiedAt()));
         }
 
+        // Full
+        if (attributesToGet.contains(ATTR_PROVENANCE)) {
+            builder.addAttribute(ATTR_PROVENANCE, toString(info.getProvenance()));
+        }
+        if (attributesToGet.contains(ATTR_DESCRIPTION)) {
+            builder.addAttribute(ATTR_DESCRIPTION, toString(info.getDescription()));
+        }
+        if (attributesToGet.contains(ATTR_EXTERNAL_SYNC_IDENTIFIER)) {
+            builder.addAttribute(ATTR_EXTERNAL_SYNC_IDENTIFIER, toString(info.getExternalSyncIdentifier()));
+        }
+        if (attributesToGet.contains(ATTR_INVITABILITY_LEVEL)) {
+            builder.addAttribute(ATTR_INVITABILITY_LEVEL, toString(info.getInvitabilityLevel()));
+        }
+        if (attributesToGet.contains(ATTR_MEMBER_VIEWABILITY_LEVEL)) {
+            builder.addAttribute(ATTR_MEMBER_VIEWABILITY_LEVEL, toString(info.getMemberViewabilityLevel()));
+        }
+
+        // Association
+        if (attributesToGet.contains(ATTR_MEMBER) || attributesToGet.contains(ATTR_ADMIN)) {
+            // Fetch the group members
+            Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
+            for (BoxGroupMembership.Info membershipInfo : memberships) {
+                if (membershipInfo.getRole().equals(BoxUser.Role.USER) && attributesToGet.contains(ATTR_MEMBER)) {
+                    builder.addAttribute(ATTR_MEMBER, membershipInfo.getID());
+                } else if (membershipInfo.getRole().equals(BoxUser.Role.ADMIN) && attributesToGet.contains(ATTR_ADMIN)) {
+                    builder.addAttribute(ATTR_ADMIN, membershipInfo.getID());
+                }
+            }
+        }
 
         ConnectorObject connectorObject = builder.build();
         return connectorObject;

@@ -1,0 +1,13 @@
+{
+  "total_count": 0,
+  "limit": 1000,
+  "offset": 0,
+  "order": [
+    {
+      "by": "type",
+      "direction": "ASC"
+    }
+  ],
+  "entries": [
+  ]
+}

@@ -7,13 +7,12 @@
 
 package com.exclamationlabs.connid.box;
 
-import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.objects.Attribute;
-import org.identityconnectors.framework.common.objects.AttributeUtil;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
-import org.identityconnectors.framework.common.objects.filter.*;
+import org.identityconnectors.framework.common.objects.filter.AbstractFilterTranslator;
+import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 
 /**
  * This is an implementation of AbstractFilterTranslator that gives a concrete representation
@@ -27,7 +26,7 @@ import org.identityconnectors.framework.common.objects.filter.*;
  * @author Andrew Cope
  * @version $Revision$ $Date$
  */
-public class BoxFilterTranslator extends AbstractFilterTranslator<String> {
+public class BoxFilterTranslator extends AbstractFilterTranslator<BoxFilter> {
 
     private static final Log LOG = Log.getLog(BoxFilterTranslator.class);
 
@@ -35,113 +34,19 @@ public class BoxFilterTranslator extends AbstractFilterTranslator<String> {
      * {@inheritDoc}
      */
     @Override
-    protected String createAndExpression(String leftExpression, String rightExpression) {
-        return super.createAndExpression(leftExpression, rightExpression);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createOrExpression(String leftExpression, String rightExpression) {
-        return super.createOrExpression(leftExpression, rightExpression);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createContainsExpression(ContainsFilter filter, boolean not) {
-        return super.createContainsExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createEndsWithExpression(EndsWithFilter filter, boolean not) {
-        return super.createEndsWithExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createEqualsExpression(EqualsFilter filter, boolean not) {
-
+    protected BoxFilter createEqualsExpression(EqualsFilter filter, boolean not) {
         if (not) { // no way (natively) to search for "NotEquals"
             return null;
         }
         Attribute attr = filter.getAttribute();
-        if (!attr.is(Name.NAME) && !attr.is(Uid.NAME)) {
-            return null;
+
+        if (attr instanceof Uid) {
+            return BoxFilter.By((Uid) attr);
         }
-        String name = attr.getName();
-        String value = AttributeUtil.getAsStringValue(attr);
-        if (checkSearchValue(value) == null) {
-            return null;
-        } else {
-            return value;
+        if (attr instanceof Name) {
+            return BoxFilter.By((Name) attr);
         }
 
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createGreaterThanExpression(GreaterThanFilter filter, boolean not) {
-        return super.createGreaterThanExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createGreaterThanOrEqualExpression(GreaterThanOrEqualFilter filter, boolean not) {
-        return super.createGreaterThanOrEqualExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createLessThanExpression(LessThanFilter filter, boolean not) {
-        return super.createLessThanExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createLessThanOrEqualExpression(LessThanOrEqualFilter filter, boolean not) {
-        return super.createLessThanOrEqualExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createStartsWithExpression(StartsWithFilter filter, boolean not) {
-        return super.createStartsWithExpression(filter, not);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected String createContainsAllValuesExpression(ContainsAllValuesFilter filter, boolean not) {
-        return super.createContainsAllValuesExpression(filter, not);
-    }
-
-    private String checkSearchValue(String value) {
-        if (StringUtil.isEmpty(value)) {
-            return null;
-        }
-        if (value.contains("*") || value.contains("&") || value.contains("|")) {
-            throw new IllegalArgumentException(
-                    "Value of search attribute contains illegal character(s).");
-        }
-        return value;
+        return null;
     }
 }

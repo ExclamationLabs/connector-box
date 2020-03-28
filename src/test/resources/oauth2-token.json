@@ -1,0 +1,19 @@
+{
+  "access_token": "c3FIOG9vSGV4VHo4QzAyg5T1JvNnJoZ3ExaVNyQWw6WjRsanRKZG5lQk9qUE1BVQ",
+  "expires_in": 3600,
+  "token_type": "bearer",
+  "restricted_to": [
+    {
+      "scope": "item_download",
+      "object": {
+        "id": 12345,
+        "etag": 1,
+        "type": "file",
+        "sequence_id": 3,
+        "name": "Contract.pdf"
+      }
+    }
+  ],
+  "refresh_token": "c3FIOG9vSGV4VHo4QzAyg5T1JvNnJoZ3ExaVNyQWw6WjRsanRKZG5lQk9qUE1BVQ",
+  "issued_token_type": "urn:ietf:params:oauth:token-type:access_token"
+}

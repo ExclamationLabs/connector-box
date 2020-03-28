@@ -11,26 +11,26 @@
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2
                               http://maven.apache.org/xsd/assembly-1.1.2.xsd">
 
-  <id>bundle</id>
+    <id>bundle</id>
 
-  <formats>
-    <format>jar</format>
-  </formats>
-    
-  <includeBaseDirectory>false</includeBaseDirectory>
+    <formats>
+        <format>jar</format>
+    </formats>
 
-  <fileSets>
-    <fileSet>
-      <directory>${project.build.directory}/classes</directory>
-      <outputDirectory></outputDirectory>
-    </fileSet>
-      <fileSet>
-          <directory>${basedir}/src/test/resources</directory>
-          <includes>
-              <include>*.xml</include>
-          </includes>
-      </fileSet>
-  </fileSets>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/classes</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${basedir}/src/test/resources</directory>
+            <includes>
+                <include>*.xml</include>
+            </includes>
+        </fileSet>
+    </fileSets>
 
     <dependencySets>
         <dependencySet>
