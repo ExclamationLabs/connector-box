@@ -1,4 +1,4 @@
 /.idea
-/test-config.json
+/*.json
 /connector-box.iml
 /target

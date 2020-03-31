@@ -12,16 +12,15 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-
     <parent>
         <groupId>net.tirasa.connid</groupId>
         <artifactId>connid</artifactId>
-        <version>1.4.2.0</version>
+        <version>1.5.0.0</version>
     </parent>
 
     <groupId>com.exclamationlabs.connid.box</groupId>
     <artifactId>connector-box</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
     <name>ConnId Box Identity connector</name>
     <packaging>jar</packaging>
 
@@ -32,7 +31,7 @@
     <description>Connector for box.com</description>
 
     <properties>
-        <connid.version>1.4.2.0</connid.version>
+        <connid.version>1.5.0.0</connid.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -41,35 +40,13 @@
         <dependency>
             <groupId>com.box</groupId>
             <artifactId>box-java-sdk</artifactId>
-            <version>2.44.0</version>
-        </dependency>
-        <!-- additional box sdk dependencies -->
-        <dependency>
-            <groupId>com.eclipsesource.minimal-json</groupId>
-            <artifactId>minimal-json</artifactId>
-            <version>0.9.1</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.bitbucket.b_c</groupId>
-            <artifactId>jose4j</artifactId>
-            <version>0.5.5</version>
+            <version>2.44.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.60</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-            <version>1.60</version>
         </dependency>
 
         <dependency>
@@ -82,20 +59,6 @@
             <artifactId>connector-framework-internal</artifactId>
             <version>${connid.version}</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/joda-time/joda-time -->
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-            <version>2.9.9</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/com.google.collections/google-collections -->
-        <dependency>
-            <groupId>com.google.collections</groupId>
-            <artifactId>google-collections</artifactId>
-            <version>1.0</version>
-        </dependency>
-
-
 
         <!-- TEST -->
         <dependency>
@@ -105,23 +68,28 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.6.1</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.25</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.6.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <version>1.6.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-
         <plugins>
-            <!-- Disable any licese check -->
+            <!-- Disable any license check -->
             <plugin>
                 <groupId>com.mycila.maven-license-plugin</groupId>
                 <artifactId>maven-license-plugin</artifactId>
@@ -129,50 +97,6 @@
                 <configuration>
                     <skip>true</skip>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <inherited>true</inherited>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>copy-javadoc-legal-files</id>
-                        <phase>none</phase>
-                    </execution>
-                    <execution>
-                        <id>copy-resources</id>
-                        <!-- here the phase you need -->
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.basedir}/target/test-classes</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.basedir}/src/test/resources</directory>
-                                    <filtering>false</filtering>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>ianal-maven-plugin</artifactId>
-                <inherited>true</inherited>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>verify-legal-files</goal>
-                        </goals>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -218,9 +142,34 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.2</version>
+                <configuration>
+                    <properties>
+                        <configurationParameters>
+                            junit.jupiter.execution.parallel.enabled=false
+                        </configurationParameters>
+                    </properties>
+                    <includes>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                    <runOrder>alphabetical</runOrder>
+                    <argLine>-Xms512m -Xmx1024m -Xss256k</argLine>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.surefire</groupId>
+                        <artifactId>surefire-junit-platform</artifactId>
+                        <version>2.22.2</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
@@ -238,4 +187,37 @@
         </repository>
     </repositories>
 
+    <!-- For Integration test with midPoint -->
+    <profiles>
+        <profile>
+            <id>midpoint</id>
+            <repositories>
+                <repository>
+                    <id>evolveum-nexus-releases</id>
+                    <name>Internal Releases</name>
+                    <url>http://nexus.evolveum.com/nexus/content/repositories/releases/</url>
+                </repository>
+                <repository>
+                    <id>evolveum-nexus-snapshots</id>
+                    <name>Internal Releases</name>
+                    <url>http://nexus.evolveum.com/nexus/content/repositories/snapshots/</url>
+                </repository>
+                <repository>
+                    <id>apache-snapshots</id>
+                    <name>Apache Snapshots</name>
+                    <url>http://repository.apache.org/snapshots/</url>
+                </repository>
+            </repositories>
+            <dependencies>
+                <dependency>
+                    <groupId>com.evolveum.midpoint.gui</groupId>
+                    <artifactId>admin-gui</artifactId>
+                    <version>4.0.2</version>
+                    <type>jar</type>
+                    <classifier>classes</classifier>
+                    <scope>provided</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>

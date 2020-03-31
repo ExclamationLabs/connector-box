@@ -1,0 +1,11 @@
+{
+  "entries": [
+    {
+      "id": "11446498",
+      "type": "email_alias",
+      "email": "ceo@example.com",
+      "is_confirmed": true
+    }
+  ],
+  "total_count": 1
+}
