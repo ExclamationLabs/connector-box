@@ -20,9 +20,7 @@ import org.identityconnectors.framework.spi.InstanceNameAware;
 import org.identityconnectors.framework.spi.PoolableConnector;
 import org.identityconnectors.framework.spi.operations.*;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Set;
@@ -70,9 +68,7 @@ public class BoxConnector implements PoolableConnector,
     protected void authenticateResource() {
         BoxConfiguration config = getConfiguration();
 
-        String configFilePath = config.getConfigFilePath();
-
-        try (Reader reader = new FileReader(configFilePath)) {
+        try (Reader reader = resolveConfigReader(config)) {
             boxConfig = BoxConfig.readFrom(reader);
         } catch (IOException e) {
             LOGGER.error(e, "[{0}] Error loading Box JWT Auth Config File", instanceName);
@@ -112,6 +108,20 @@ public class BoxConnector implements PoolableConnector,
         boxDeveloperEditionAPIConnection.authenticate();
 
         this.boxAPI = boxDeveloperEditionAPIConnection;
+    }
+
+    private Reader resolveConfigReader(BoxConfiguration config) throws FileNotFoundException {
+        if (StringUtil.isNotBlank(config.getConfigFilePath())) {
+            return new FileReader(config.getConfigFilePath());
+
+        } else if (config.getConfigJson() != null) {
+            final StringReader[] configReader = new StringReader[1];
+            config.getConfigJson().access(c -> {
+                configReader[0] = new StringReader(String.valueOf(c));
+            });
+            return configReader[0];
+        }
+        throw new ConfigurationException("configFilePath or configJson must not be empty");
     }
 
     @Override
