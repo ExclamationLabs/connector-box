@@ -17,6 +17,7 @@ import org.identityconnectors.framework.spi.ConfigurationProperty;
 public class BoxConfiguration extends AbstractConfiguration {
 
     private String configFilePath;
+    private GuardedString configJson;
     private String httpProxyHost;
     private int httpProxyPort;
     private String httpProxyUser;
@@ -26,7 +27,7 @@ public class BoxConfiguration extends AbstractConfiguration {
             order = 1,
             displayMessageKey = "JWT Config File Path",
             helpMessageKey = "File path for the JWT Config File",
-            required = true,
+            required = false,
             confidential = false)
     public String getConfigFilePath() {
         return configFilePath;
@@ -38,6 +39,20 @@ public class BoxConfiguration extends AbstractConfiguration {
 
     @ConfigurationProperty(
             order = 2,
+            displayMessageKey = "JWT Config JSON",
+            helpMessageKey = "JSON String of the JWT Config File",
+            required = false,
+            confidential = true)
+    public GuardedString getConfigJson() {
+        return configJson;
+    }
+
+    public void setConfigJson(GuardedString configJson) {
+        this.configJson = configJson;
+    }
+
+    @ConfigurationProperty(
+            order = 3,
             displayMessageKey = "HTTP Proxy Host",
             helpMessageKey = "Hostname for the HTTP Proxy",
             required = false,
@@ -51,7 +66,7 @@ public class BoxConfiguration extends AbstractConfiguration {
     }
 
     @ConfigurationProperty(
-            order = 3,
+            order = 4,
             displayMessageKey = "HTTP Proxy Port",
             helpMessageKey = "Port for the HTTP Proxy",
             required = false,
@@ -65,7 +80,7 @@ public class BoxConfiguration extends AbstractConfiguration {
     }
 
     @ConfigurationProperty(
-            order = 4,
+            order = 5,
             displayMessageKey = "HTTP Proxy User",
             helpMessageKey = "Username for the HTTP Proxy Authentication",
             required = false,
@@ -79,7 +94,7 @@ public class BoxConfiguration extends AbstractConfiguration {
     }
 
     @ConfigurationProperty(
-            order = 5,
+            order = 6,
             displayMessageKey = "HTTP Proxy Password",
             helpMessageKey = "Password for the HTTP Proxy Authentication",
             required = false,
@@ -94,31 +109,15 @@ public class BoxConfiguration extends AbstractConfiguration {
 
     @Override
     public void validate() {
-        if (StringUtil.isBlank(configFilePath)) {
-            throw new ConfigurationException("Client Id must not be empty");
+        if (StringUtil.isBlank(configFilePath) && configJson == null) {
+            throw new ConfigurationException("configFilePath or configJson must not be empty");
         }
     }
-
 
     @Override
     public String toString() {
         return "BoxConfiguration{" +
                 "configFilePath='" + configFilePath + '\'' +
                 '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BoxConfiguration)) return false;
-
-        BoxConfiguration that = (BoxConfiguration) o;
-
-        return getConfigFilePath().equals(that.getConfigFilePath());
-    }
-
-    @Override
-    public int hashCode() {
-        return getConfigFilePath().hashCode();
     }
 }

@@ -20,7 +20,7 @@
 
     <groupId>com.exclamationlabs.connid.box</groupId>
     <artifactId>connector-box</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
+    <version>2.1</version>
     <name>ConnId Box Identity connector</name>
     <packaging>jar</packaging>
 
@@ -187,37 +187,4 @@
         </repository>
     </repositories>
 
-    <!-- For Integration test with midPoint -->
-    <profiles>
-        <profile>
-            <id>midpoint</id>
-            <repositories>
-                <repository>
-                    <id>evolveum-nexus-releases</id>
-                    <name>Internal Releases</name>
-                    <url>http://nexus.evolveum.com/nexus/content/repositories/releases/</url>
-                </repository>
-                <repository>
-                    <id>evolveum-nexus-snapshots</id>
-                    <name>Internal Releases</name>
-                    <url>http://nexus.evolveum.com/nexus/content/repositories/snapshots/</url>
-                </repository>
-                <repository>
-                    <id>apache-snapshots</id>
-                    <name>Apache Snapshots</name>
-                    <url>http://repository.apache.org/snapshots/</url>
-                </repository>
-            </repositories>
-            <dependencies>
-                <dependency>
-                    <groupId>com.evolveum.midpoint.gui</groupId>
-                    <artifactId>admin-gui</artifactId>
-                    <version>4.0.2</version>
-                    <type>jar</type>
-                    <classifier>classes</classifier>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>
