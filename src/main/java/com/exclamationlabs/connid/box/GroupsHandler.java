@@ -15,9 +15,7 @@ import org.identityconnectors.framework.common.exceptions.InvalidAttributeValueE
 import org.identityconnectors.framework.common.objects.*;
 
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,7 +46,7 @@ public class GroupsHandler extends AbstractHandler {
     // There are two roles of members: "member" and "admin"
     // https://developer.box.com/reference/resources/group-membership/#param-role
     protected static final String ATTR_MEMBER = "member";
-    protected static final String ATTR_ADMIN = "admin";
+    protected static final String ATTR_ADMIN_MEMBER = "admin_member";
 
     // Collaborations for group
     protected static final String ATTR_CO_OWNER = "co_owner";
@@ -74,16 +72,23 @@ public class GroupsHandler extends AbstractHandler {
             ATTR_MEMBER_VIEWABILITY_LEVEL,
             ATTR_PROVENANCE
     };
+    protected static final String[] ASSOCIATION_ATTRS = new String[]{
+            ATTR_MEMBER,
+            ATTR_ADMIN_MEMBER
+    };
     protected static final Set<String> STANDARD_ATTRS_SET =
             Collections.unmodifiableSet(Stream.of(
                     MINI_ATTRS,
                     STANDARD_ATTRS
             ).flatMap(Arrays::stream).collect(Collectors.toSet()));
-    protected static final Set<String> FULL_ATTRS_SET =
+    protected static final Set<String> ASSOCIATION_ATTRS_SET =
+            Collections.unmodifiableSet(Arrays.stream(ASSOCIATION_ATTRS).collect(Collectors.toSet()));
+    protected static final Set<String> FULL_ATTRS_WITH_ASSOCIATION_SET =
             Collections.unmodifiableSet(Stream.of(
                     MINI_ATTRS,
                     STANDARD_ATTRS,
-                    FULL_ATTRS
+                    FULL_ATTRS,
+                    ASSOCIATION_ATTRS
             ).flatMap(Arrays::stream).collect(Collectors.toSet()));
 
     public GroupsHandler(String instanceName, BoxAPIConnection boxAPI) {
@@ -172,14 +177,20 @@ public class GroupsHandler extends AbstractHandler {
 
         // Association
 
-        // Group member(member)
+        // Group member(member) (read-only, not implemented update from group side)
         builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_MEMBER)
                 .setMultiValued(true)
+                .setCreateable(false)
+                .setUpdateable(false)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_MEMBER))
                 .build());
 
-        // Group member(admin)
-        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_ADMIN)
+        // Group member(admin) (read-only, not implemented update from group side)
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_ADMIN_MEMBER)
                 .setMultiValued(true)
+                .setCreateable(false)
+                .setUpdateable(false)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_ADMIN_MEMBER))
                 .build());
 
         // Collaborations for group
@@ -336,17 +347,22 @@ public class GroupsHandler extends AbstractHandler {
     }
 
     private void getAllGroups(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
-        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxAPI, attributesToGet.toArray(new String[attributesToGet.size()]));
+        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxAPI, toFetchFields(attributesToGet));
         for (BoxGroup.Info groupInfo : groups) {
             handler.handle(groupToConnectorObject(groupInfo, attributesToGet));
         }
+    }
+
+    private String[] toFetchFields(Set<String> attributesToGet) {
+        String[] fetchFields = attributesToGet.stream().filter(a -> !ASSOCIATION_ATTRS_SET.contains(a)).toArray(String[]::new);
+        return fetchFields;
     }
 
     private void getGroup(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
         BoxGroup group = new BoxGroup(boxAPI, uid.getUidValue());
         try {
             // Fetch a group
-            BoxGroup.Info info = group.getInfo(attributesToGet.toArray(new String[attributesToGet.size()]));
+            BoxGroup.Info info = group.getInfo(toFetchFields(attributesToGet));
 
             handler.handle(groupToConnectorObject(info, attributesToGet));
 
@@ -364,8 +380,7 @@ public class GroupsHandler extends AbstractHandler {
         // "List groups for enterprise" doesn't support find by "name" according to the following API spec:
         // https://developer.box.com/reference/get-groups/
         // But it supports query filter internally and the SDK has utility method: BoxGroup.getAllGroupsByName.
-        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroupsByName(boxAPI, name.getNameValue(),
-                attributesToGet.toArray(new String[attributesToGet.size()]));
+        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroupsByName(boxAPI, name.getNameValue(), toFetchFields(attributesToGet));
 
         for (BoxGroup.Info info : groups) {
             if (info.getName().equalsIgnoreCase(name.getNameValue())) {
@@ -396,6 +411,11 @@ public class GroupsHandler extends AbstractHandler {
         builder.setUid(new Uid(info.getID(), new Name(info.getName())));
         builder.setName(info.getName());
 
+        // Mini
+        if (attributesToGet.contains(ATTR_GROUP_TYPE)) {
+            builder.addAttribute(ATTR_GROUP_TYPE, info.getGroupType().name().toLowerCase());
+        }
+
         // Standard
         if (attributesToGet.contains(ATTR_CREATED_AT)) {
             builder.addAttribute(ATTR_CREATED_AT, toZonedDateTime(info.getCreatedAt()));
@@ -422,15 +442,23 @@ public class GroupsHandler extends AbstractHandler {
         }
 
         // Association
-        if (attributesToGet.contains(ATTR_MEMBER) || attributesToGet.contains(ATTR_ADMIN)) {
+        if (attributesToGet.contains(ATTR_MEMBER) || attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
             // Fetch the group members
             Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
+            List<String> member = new ArrayList<>();
+            List<String> admin = new ArrayList<>();
             for (BoxGroupMembership.Info membershipInfo : memberships) {
-                if (membershipInfo.getGroupRole().equals(BoxUser.Role.USER) && attributesToGet.contains(ATTR_MEMBER)) {
-                    builder.addAttribute(ATTR_MEMBER, membershipInfo.getID());
-                } else if (membershipInfo.getGroupRole().equals(BoxUser.Role.ADMIN) && attributesToGet.contains(ATTR_ADMIN)) {
-                    builder.addAttribute(ATTR_ADMIN, membershipInfo.getID());
+                if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER) && attributesToGet.contains(ATTR_MEMBER)) {
+                    member.add(membershipInfo.getUser().getID());
+                } else if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN) && attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
+                    admin.add(membershipInfo.getGroup().getID());
                 }
+            }
+            if (attributesToGet.contains(ATTR_MEMBER)) {
+                builder.addAttribute(ATTR_MEMBER, member);
+            }
+            if (attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
+                builder.addAttribute(ATTR_ADMIN_MEMBER, admin);
             }
         }
 

@@ -44,7 +44,8 @@ class GroupSearchTests extends AbstractTests {
             return ok("group-list-1.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            fail("Shouldn't be called more than once");
+            return null;
         });
 
         List<ConnectorObject> groups = new ArrayList<>();
@@ -87,7 +88,7 @@ class GroupSearchTests extends AbstractTests {
             return ok("group-list-1.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            return ok("group-member-2.json");
         });
 
         List<ConnectorObject> groups = new ArrayList<>();
@@ -103,7 +104,7 @@ class GroupSearchTests extends AbstractTests {
                 new OperationOptionsBuilder()
                         .setReturnDefaultAttributes(true)
                         .setAttributesToGet(
-                                FULL_ATTRS
+                                FULL_ATTRS_WITH_ASSOCIATION_SET
                         )
                         .build());
 
@@ -115,12 +116,26 @@ class GroupSearchTests extends AbstractTests {
         assertEquals("Support", groups.get(0).getName().getNameValue());
 
         ConnectorObject result = groups.get(0);
-        for (String attr : GroupsHandler.STANDARD_ATTRS) {
+
+        // The number of fetched attributes is +1 because of the addition of __UID__
+        assertEquals(1 + MINI_ATTRS.length + STANDARD_ATTRS.length + FULL_ATTRS.length + ASSOCIATION_ATTRS.length,
+                result.getAttributes().size());
+
+        for (String attr : GroupsHandler.FULL_ATTRS_WITH_ASSOCIATION_SET) {
+            // name is fetched as __NAME__ and checked already, skip it
+            if (attr.equals(GroupsHandler.ATTR_NAME)) {
+                continue;
+            }
             assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
         }
-        for (String attr : GroupsHandler.FULL_ATTRS) {
-            assertNotNull(result.getAttributeByName(attr), attr + " should be null");
-        }
+
+        List<Object> member = result.getAttributeByName(GroupsHandler.ATTR_MEMBER).getValue();
+        assertEquals(1, member.size());
+        assertEquals("11446498", member.get(0).toString());
+
+        List<Object> adminMember = result.getAttributeByName(GroupsHandler.ATTR_ADMIN_MEMBER).getValue();
+        assertEquals(1, adminMember.size());
+        assertEquals("12345678", adminMember.get(0).toString());
     }
 
     @Test
@@ -133,10 +148,8 @@ class GroupSearchTests extends AbstractTests {
             return ok("group-list-2.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
-        });
-        mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            fail("Shouldn't be called more than once");
+            return null;
         });
 
         List<ConnectorObject> groups = new ArrayList<>();
@@ -210,7 +223,8 @@ class GroupSearchTests extends AbstractTests {
             return ok("group-list-1.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            fail("Shouldn't be called more than once");
+            return null;
         });
 
         List<ConnectorObject> groups = new ArrayList<>();
@@ -255,7 +269,7 @@ class GroupSearchTests extends AbstractTests {
             return ok("group-list-1.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            return ok("group-member-2.json");
         });
 
         List<ConnectorObject> groups = new ArrayList<>();
@@ -271,7 +285,7 @@ class GroupSearchTests extends AbstractTests {
                 new OperationOptionsBuilder()
                         .setReturnDefaultAttributes(true)
                         .setAttributesToGet(
-                                FULL_ATTRS
+                                GroupsHandler.FULL_ATTRS_WITH_ASSOCIATION_SET
                         )
                         .build());
 
@@ -290,11 +304,17 @@ class GroupSearchTests extends AbstractTests {
         assertEquals(groupName, groups.get(0).getName().getNameValue());
 
         ConnectorObject result = groups.get(0);
-        for (String attr : GroupsHandler.STANDARD_ATTRS) {
+
+        // The number of fetched attributes is +1 because of the addition of __UID__
+        assertEquals(1 + MINI_ATTRS.length + STANDARD_ATTRS.length + FULL_ATTRS.length + ASSOCIATION_ATTRS.length,
+                result.getAttributes().size());
+
+        for (String attr : GroupsHandler.FULL_ATTRS_WITH_ASSOCIATION_SET) {
+            // name is fetched as __NAME__ and checked already, skip it
+            if (attr.equals(GroupsHandler.ATTR_NAME)) {
+                continue;
+            }
             assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
-        }
-        for (String attr : GroupsHandler.FULL_ATTRS) {
-            assertNotNull(result.getAttributeByName(attr), attr + " should be null");
         }
     }
 
