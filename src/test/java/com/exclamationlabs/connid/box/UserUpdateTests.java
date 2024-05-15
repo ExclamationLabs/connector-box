@@ -89,7 +89,7 @@ class UserUpdateTests extends AbstractTests {
         modifications.add(AttributeDeltaBuilder.build("job_title", "CTO"));
 
         // Set retry count of the Box SDK
-        mockAPI.setMaxRequestAttempts(2);
+        mockAPI.setMaxRequestAttempts(1);
 
         AtomicInteger count = new AtomicInteger();
         mockAPI.push(req -> {

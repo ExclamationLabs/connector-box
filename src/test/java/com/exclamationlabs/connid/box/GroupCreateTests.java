@@ -120,7 +120,7 @@ class GroupCreateTests extends AbstractTests {
         attributes.add(AttributeBuilder.build("description", description));
 
         // Set retry count of the Box SDK
-        mockAPI.setMaxRequestAttempts(2);
+        mockAPI.setMaxRequestAttempts(1);
 
         AtomicInteger count = new AtomicInteger();
         mockAPI.push(req -> {

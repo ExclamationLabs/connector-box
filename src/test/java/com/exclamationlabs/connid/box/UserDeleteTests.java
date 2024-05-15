@@ -81,7 +81,7 @@ class UserDeleteTests extends AbstractTests {
         String login = "ceo@example.com";
 
         // Set retry count of the Box SDK
-        mockAPI.setMaxRequestAttempts(2);
+        mockAPI.setMaxRequestAttempts(1);
 
         AtomicInteger count = new AtomicInteger();
         mockAPI.push(req -> {

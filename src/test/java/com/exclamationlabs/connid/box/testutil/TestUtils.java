@@ -48,15 +48,15 @@ public class TestUtils {
     }
 
     public static BoxAPIResponse created(String path) {
-        return new BoxJSONResponse(201, new TreeMap(String.CASE_INSENSITIVE_ORDER), readJSONFile(path));
+        return new BoxJSONResponse(201, "", "", new TreeMap(String.CASE_INSENSITIVE_ORDER), readJSONFile(path));
     }
 
     public static BoxAPIResponse ok(String path) {
-        return new BoxJSONResponse(200, new TreeMap(String.CASE_INSENSITIVE_ORDER), readJSONFile(path));
+        return new BoxJSONResponse(200, "", "", new TreeMap(String.CASE_INSENSITIVE_ORDER), readJSONFile(path));
     }
 
     public static BoxAPIResponse noContent() {
-        return new BoxAPIResponse(204, new TreeMap(String.CASE_INSENSITIVE_ORDER));
+        return new BoxAPIResponse(204, "", "", new TreeMap(String.CASE_INSENSITIVE_ORDER));
     }
 
     public static JsonObject readJSONFile(String path) {
@@ -112,47 +112,25 @@ public class TestUtils {
     }
 
     public static BoxAPIResponseException notFound() {
-        MockBoxJSONResponse response = new MockBoxJSONResponse(404,
-                JsonObject.readFrom("{\"code\":\"not_found\"}"));
         // TODO: set real API message
-        BoxAPIResponseException e = new BoxAPIResponseException("not_found", response);
+        BoxAPIResponseException e = new BoxAPIResponseException("not_found", 404, "{\"code\":\"not_found\"}", new TreeMap(String.CASE_INSENSITIVE_ORDER));
         return e;
     }
 
     public static BoxAPIResponseException conflict() {
-        MockBoxJSONResponse response = new MockBoxJSONResponse(409,
-                JsonObject.readFrom("{\"code\":\"conflict\"}"));
         // TODO: set real API message
-        BoxAPIResponseException e = new BoxAPIResponseException("A resource with this value already exists", response);
+        BoxAPIResponseException e = new BoxAPIResponseException("A resource with this value already exists", 409, "{\"code\":\"conflict\"}", new TreeMap(String.CASE_INSENSITIVE_ORDER));
         return e;
     }
 
     public static BoxAPIResponseException userLoginAlreadyUsed() {
-        MockBoxJSONResponse response = new MockBoxJSONResponse(409,
-                JsonObject.readFrom("{\"code\":\"user_login_already_used\"}"));
         // TODO: set real API message
-        BoxAPIResponseException e = new BoxAPIResponseException("User with the specified login already exists", response);
+        BoxAPIResponseException e = new BoxAPIResponseException("User with the specified login already exists", 409, "{\"code\":\"user_login_already_used\"}", new TreeMap(String.CASE_INSENSITIVE_ORDER));
         return e;
     }
 
     public static BoxAPIResponseException internalServerError() {
-        MockBoxJSONResponse response = new MockBoxJSONResponse(500,
-                JsonObject.readFrom("{\"code\":\"internal_server_error\"}"));
-        BoxAPIResponseException e = new BoxAPIResponseException("Internal Server Error", response);
+        BoxAPIResponseException e = new BoxAPIResponseException("Internal Server Error", 500, "{\"code\":\"internal_server_error\"}", new TreeMap(String.CASE_INSENSITIVE_ORDER));
         return e;
-    }
-
-    static class MockBoxJSONResponse extends BoxAPIResponse {
-        private final JsonObject body;
-
-        MockBoxJSONResponse(int code, JsonObject body) {
-            super(code, new TreeMap(String.CASE_INSENSITIVE_ORDER));
-            this.body = body;
-        }
-
-        @Override
-        protected String bodyToString() {
-            return body.toString();
-        }
     }
 }

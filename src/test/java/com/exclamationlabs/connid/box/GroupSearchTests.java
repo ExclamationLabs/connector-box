@@ -234,7 +234,7 @@ class GroupSearchTests extends AbstractTests {
         assertNotNull(query.get("fields"));
         Set<String> fields = TestUtils.parseFields(query.get("fields"));
         assertEquals(mergeFields(MINI_ATTRS, STANDARD_ATTRS), fields);
-        assertEquals(groupName, query.get("name"));
+        assertEquals(groupName, query.get("filter_term"));
 
         assertEquals(1, groups.size());
         assertEquals(OBJECT_CLASS_GROUP, groups.get(0).getObjectClass());
@@ -282,7 +282,7 @@ class GroupSearchTests extends AbstractTests {
         assertNotNull(query.get("fields"));
         Set<String> fields = TestUtils.parseFields(query.get("fields"));
         assertEquals(mergeFields(MINI_ATTRS, STANDARD_ATTRS, FULL_ATTRS), fields);
-        assertEquals(groupName, query.get("name"));
+        assertEquals(groupName, query.get("filter_term"));
 
         assertEquals(1, groups.size());
         assertEquals(OBJECT_CLASS_GROUP, groups.get(0).getObjectClass());

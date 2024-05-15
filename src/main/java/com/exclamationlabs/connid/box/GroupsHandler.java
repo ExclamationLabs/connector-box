@@ -364,9 +364,7 @@ public class GroupsHandler extends AbstractHandler {
         // "List groups for enterprise" doesn't support find by "name" according to the following API spec:
         // https://developer.box.com/reference/get-groups/
         // But it supports query filter internally and the SDK has utility method: BoxGroup.getAllGroupsByName.
-        // However, the SDK doesn't have a method with fields.
-        // So we call own getAllGroupsByName method as the workaround.
-        Iterable<BoxGroup.Info> groups = AdditionalAPI.getAllGroupsByName(boxAPI, name.getNameValue(),
+        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroupsByName(boxAPI, name.getNameValue(),
                 attributesToGet.toArray(new String[attributesToGet.size()]));
 
         for (BoxGroup.Info info : groups) {
@@ -428,9 +426,9 @@ public class GroupsHandler extends AbstractHandler {
             // Fetch the group members
             Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
             for (BoxGroupMembership.Info membershipInfo : memberships) {
-                if (membershipInfo.getRole().equals(BoxUser.Role.USER) && attributesToGet.contains(ATTR_MEMBER)) {
+                if (membershipInfo.getGroupRole().equals(BoxUser.Role.USER) && attributesToGet.contains(ATTR_MEMBER)) {
                     builder.addAttribute(ATTR_MEMBER, membershipInfo.getID());
-                } else if (membershipInfo.getRole().equals(BoxUser.Role.ADMIN) && attributesToGet.contains(ATTR_ADMIN)) {
+                } else if (membershipInfo.getGroupRole().equals(BoxUser.Role.ADMIN) && attributesToGet.contains(ATTR_ADMIN)) {
                     builder.addAttribute(ATTR_ADMIN, membershipInfo.getID());
                 }
             }
