@@ -7,7 +7,10 @@
 
 package com.exclamationlabs.connid.box;
 
-import com.box.sdk.*;
+import com.box.sdk.BoxAPIConnection;
+import com.box.sdk.BoxAPIException;
+import com.box.sdk.BoxGroup;
+import com.box.sdk.BoxGroupMembership;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.exceptions.AlreadyExistsException;
@@ -347,22 +350,17 @@ public class GroupsHandler extends AbstractHandler {
     }
 
     private void getAllGroups(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
-        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxAPI, toFetchFields(attributesToGet));
+        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxAPI, toFetchFields(attributesToGet, ASSOCIATION_ATTRS_SET));
         for (BoxGroup.Info groupInfo : groups) {
             handler.handle(groupToConnectorObject(groupInfo, attributesToGet));
         }
-    }
-
-    private String[] toFetchFields(Set<String> attributesToGet) {
-        String[] fetchFields = attributesToGet.stream().filter(a -> !ASSOCIATION_ATTRS_SET.contains(a)).toArray(String[]::new);
-        return fetchFields;
     }
 
     private void getGroup(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
         BoxGroup group = new BoxGroup(boxAPI, uid.getUidValue());
         try {
             // Fetch a group
-            BoxGroup.Info info = group.getInfo(toFetchFields(attributesToGet));
+            BoxGroup.Info info = group.getInfo(toFetchFields(attributesToGet, ASSOCIATION_ATTRS_SET));
 
             handler.handle(groupToConnectorObject(info, attributesToGet));
 
@@ -380,7 +378,7 @@ public class GroupsHandler extends AbstractHandler {
         // "List groups for enterprise" doesn't support find by "name" according to the following API spec:
         // https://developer.box.com/reference/get-groups/
         // But it supports query filter internally and the SDK has utility method: BoxGroup.getAllGroupsByName.
-        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroupsByName(boxAPI, name.getNameValue(), toFetchFields(attributesToGet));
+        Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroupsByName(boxAPI, name.getNameValue(), toFetchFields(attributesToGet, ASSOCIATION_ATTRS_SET));
 
         for (BoxGroup.Info info : groups) {
             if (info.getName().equalsIgnoreCase(name.getNameValue())) {

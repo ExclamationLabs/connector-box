@@ -22,6 +22,10 @@ public class BoxConfiguration extends AbstractConfiguration {
     private int httpProxyPort;
     private String httpProxyUser;
     private GuardedString httpProxyPassword;
+    private Boolean groupAdminDefaultPermissionCanCreateAccounts;
+    private Boolean groupAdminDefaultPermissionCanEditAccounts;
+    private Boolean groupAdminDefaultPermissionCanCInstantLogin;
+    private Boolean groupAdminDefaultPermissionCanRunReports;
 
     @ConfigurationProperty(
             order = 1,
@@ -105,6 +109,62 @@ public class BoxConfiguration extends AbstractConfiguration {
 
     public void setHttpProxyPassword(GuardedString httpProxyPassword) {
         this.httpProxyPassword = httpProxyPassword;
+    }
+
+    @ConfigurationProperty(
+            order = 7,
+            displayMessageKey = "Group Admin Default Permission - can_create_accounts",
+            helpMessageKey = "If true, when assigned to a group as group admin, the user has \"can_create_accounts\" permission by default",
+            required = false,
+            confidential = false)
+    public Boolean getGroupAdminDefaultPermissionCanCreateAccounts() {
+        return groupAdminDefaultPermissionCanCreateAccounts;
+    }
+
+    public void setGroupAdminDefaultPermissionCanCreateAccounts(Boolean groupAdminDefaultPermissionCanCreateAccounts) {
+        this.groupAdminDefaultPermissionCanCreateAccounts = groupAdminDefaultPermissionCanCreateAccounts;
+    }
+
+    @ConfigurationProperty(
+            order = 8,
+            displayMessageKey = "Group Admin Default Permission - can_edit_accounts",
+            helpMessageKey = "If true, when assigned to a group as group admin, the user has \"can_edit_accounts\" permission by default",
+            required = false,
+            confidential = false)
+    public Boolean getGroupAdminDefaultPermissionCanEditAccounts() {
+        return groupAdminDefaultPermissionCanEditAccounts;
+    }
+
+    public void setGroupAdminDefaultPermissionCanEditAccounts(Boolean groupAdminDefaultPermissionCanEditAccounts) {
+        this.groupAdminDefaultPermissionCanEditAccounts = groupAdminDefaultPermissionCanEditAccounts;
+    }
+
+    @ConfigurationProperty(
+            order = 9,
+            displayMessageKey = "Group Admin Default Permission - can_instant_login",
+            helpMessageKey = "If true, when assigned to a group as group admin, the user has \"can_instant_login\" permission by default",
+            required = false,
+            confidential = false)
+    public Boolean getGroupAdminDefaultPermissionCanCInstantLogin() {
+        return groupAdminDefaultPermissionCanCInstantLogin;
+    }
+
+    public void setGroupAdminDefaultPermissionCanCInstantLogin(Boolean groupAdminDefaultPermissionCanCInstantLogin) {
+        this.groupAdminDefaultPermissionCanCInstantLogin = groupAdminDefaultPermissionCanCInstantLogin;
+    }
+
+    @ConfigurationProperty(
+            order = 10,
+            displayMessageKey = "Group Admin Default Permission - can_run_reports",
+            helpMessageKey = "If true, when assigned to a group as group admin, the user has \"can_run_reports\" permission by default",
+            required = false,
+            confidential = false)
+    public Boolean getGroupAdminDefaultPermissionCanRunReports() {
+        return groupAdminDefaultPermissionCanRunReports;
+    }
+
+    public void setGroupAdminDefaultPermissionCanRunReports(Boolean groupAdminDefaultPermissionCanRunReports) {
+        this.groupAdminDefaultPermissionCanRunReports = groupAdminDefaultPermissionCanRunReports;
     }
 
     @Override

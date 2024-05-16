@@ -146,7 +146,7 @@ public class BoxConnector implements PoolableConnector,
 
         try {
             if (objectClass.equals(OBJECT_CLASS_USER)) {
-                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI);
+                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI, configuration);
                 return usersHandler.createUser(createAttributes);
 
             } else if (objectClass.equals(OBJECT_CLASS_GROUP)) {
@@ -177,7 +177,7 @@ public class BoxConnector implements PoolableConnector,
 
         try {
             if (objectClass.equals(OBJECT_CLASS_USER)) {
-                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI);
+                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI, configuration);
                 return usersHandler.updateUser(uid, modifications);
 
             } else if (objectClass.equals(OBJECT_CLASS_GROUP)) {
@@ -199,7 +199,7 @@ public class BoxConnector implements PoolableConnector,
 
         try {
             if (objectClass.equals(OBJECT_CLASS_USER)) {
-                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI);
+                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI, configuration);
                 usersHandler.deleteUser(objectClass, uid, options);
                 return;
 
@@ -219,7 +219,7 @@ public class BoxConnector implements PoolableConnector,
     public Schema schema() {
         SchemaBuilder schemaBuilder = new SchemaBuilder(BoxConnector.class);
 
-        UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI);
+        UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI, configuration);
         ObjectClassInfo userSchemaInfo = usersHandler.getUserSchema();
         schemaBuilder.defineObjectClass(userSchemaInfo);
 
@@ -284,7 +284,7 @@ public class BoxConnector implements PoolableConnector,
 
         try {
             if (objectClass.equals(OBJECT_CLASS_USER)) {
-                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI);
+                UsersHandler usersHandler = new UsersHandler(instanceName, boxAPI, configuration);
                 usersHandler.query(filter, handler, options);
                 return;
 

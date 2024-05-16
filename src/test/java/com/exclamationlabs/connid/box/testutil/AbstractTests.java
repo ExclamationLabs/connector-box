@@ -36,6 +36,15 @@ public abstract class AbstractTests {
         return factory.newInstance(impl);
     }
 
+    protected void updateConfiguration(BoxConfiguration configuration) {
+        ConnectorFacadeFactory factory = ConnectorFacadeFactory.getInstance();
+        APIConfiguration impl = TestHelpers.createTestConfiguration(LocalBoxConnector.class, configuration);
+        impl.getResultsHandlerConfiguration().setEnableAttributesToGetSearchResultsHandler(false);
+        impl.getResultsHandlerConfiguration().setEnableNormalizingResultsHandler(false);
+        impl.getResultsHandlerConfiguration().setEnableFilteredResultsHandler(false);
+        connector = factory.newInstance(impl);
+    }
+
     protected BoxConfiguration newConfig() {
         BoxConfiguration boxConfiguration = new BoxConfiguration();
         return boxConfiguration;
