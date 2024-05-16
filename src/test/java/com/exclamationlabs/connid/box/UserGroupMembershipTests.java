@@ -1457,4 +1457,122 @@ class UserGroupMembershipTests extends AbstractTests {
         assertEquals("23456789#can_create_accounts=false,can_edit_accounts=false,can_instant_login=false,can_run_reports=false",
                 result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION).getValue().get(0));
     }
+
+    @Test
+    void getUser_group_3_with_admin_group_incomplete() {
+        // Given
+        String uid = "11446498";
+        String login = "ceo@example.com";
+
+        List<BoxAPIRequest> requests = new ArrayList<>();
+        mockAPI.push(req -> {
+            requests.add(req);
+
+            return ok("user-get.json");
+        });
+        mockAPI.push(req -> {
+            fail("Shouldn't be called");
+            return null;
+        });
+
+        // When
+        ConnectorObject result = connector.getObject(OBJECT_CLASS_USER,
+                new Uid(uid, new Name(login)),
+                new OperationOptionsBuilder()
+                        .setReturnDefaultAttributes(true)
+                        .setAttributesToGet(
+                                ATTR_GROUP_MEMBERSHIP,
+                                ATTR_GROUP_ADMIN_MEMBERSHIP
+                        )
+                        .setAllowPartialAttributeValues(true) // set ALLOW_PARTIAL_ATTRIBUTE_VALUES operation option
+                        .build());
+
+        // Then
+        assertEquals(1, requests.size());
+        assertEquals("/2.0/users/" + uid, requests.get(0).getUrl().getPath());
+
+        Map<String, String> query = TestUtils.parseQuery(requests.get(0));
+        assertNotNull(query.get("fields"));
+        Set<String> fields = TestUtils.parseFields(query.get("fields"));
+        assertEquals(mergeFields(MINI_ATTRS, STANDARD_ATTRS), fields);
+
+        assertEquals(OBJECT_CLASS_USER, result.getObjectClass());
+        assertEquals(uid, result.getUid().getUidValue());
+        assertEquals(login, result.getName().getNameValue());
+
+        for (String attr : UsersHandler.STANDARD_ATTRS) {
+            assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
+        }
+        for (String attr : UsersHandler.FULL_ATTRS) {
+            assertNull(result.getAttributeByName(attr), attr + " should be null");
+        }
+
+        assertEquals(0, result.getAttributeByName(ATTR_GROUP_MEMBERSHIP).getValue().size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(ATTR_GROUP_MEMBERSHIP).getAttributeValueCompleteness());
+
+        assertEquals(0, result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP).getValue().size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP).getAttributeValueCompleteness());
+
+        assertNull(result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION));
+    }
+
+    @Test
+    void getUser_group_3_with_admin_group_and_permission_incomplete() {
+        // Given
+        String uid = "11446498";
+        String login = "ceo@example.com";
+
+        List<BoxAPIRequest> requests = new ArrayList<>();
+        mockAPI.push(req -> {
+            requests.add(req);
+
+            return ok("user-get.json");
+        });
+        mockAPI.push(req -> {
+            fail("Shouldn't be called");
+            return null;
+        });
+
+        // When
+        ConnectorObject result = connector.getObject(OBJECT_CLASS_USER,
+                new Uid(uid, new Name(login)),
+                new OperationOptionsBuilder()
+                        .setReturnDefaultAttributes(true)
+                        .setAttributesToGet(
+                                ATTR_GROUP_MEMBERSHIP,
+                                ATTR_GROUP_ADMIN_MEMBERSHIP,
+                                ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION
+                        )
+                        .setAllowPartialAttributeValues(true) // set ALLOW_PARTIAL_ATTRIBUTE_VALUES operation option
+                        .build());
+
+        // Then
+        assertEquals(1, requests.size());
+        assertEquals("/2.0/users/" + uid, requests.get(0).getUrl().getPath());
+
+        Map<String, String> query = TestUtils.parseQuery(requests.get(0));
+        assertNotNull(query.get("fields"));
+        Set<String> fields = TestUtils.parseFields(query.get("fields"));
+        assertEquals(mergeFields(MINI_ATTRS, STANDARD_ATTRS), fields);
+
+        assertEquals(OBJECT_CLASS_USER, result.getObjectClass());
+        assertEquals(uid, result.getUid().getUidValue());
+        assertEquals(login, result.getName().getNameValue());
+
+        for (String attr : UsersHandler.STANDARD_ATTRS) {
+            assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
+        }
+        for (String attr : UsersHandler.FULL_ATTRS) {
+            assertNull(result.getAttributeByName(attr), attr + " should be null");
+        }
+
+        assertEquals(0, result.getAttributeByName(ATTR_GROUP_MEMBERSHIP).getValue().size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(ATTR_GROUP_MEMBERSHIP).getAttributeValueCompleteness());
+
+        assertEquals(0, result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP).getValue().size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP).getAttributeValueCompleteness());
+
+        assertEquals(0, result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION).getValue().size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION).getAttributeValueCompleteness());
+    }
 }

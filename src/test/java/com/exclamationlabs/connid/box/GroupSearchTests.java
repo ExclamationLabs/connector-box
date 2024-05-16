@@ -10,10 +10,7 @@ package com.exclamationlabs.connid.box;
 import com.box.sdk.BoxAPIRequest;
 import com.exclamationlabs.connid.box.testutil.AbstractTests;
 import com.exclamationlabs.connid.box.testutil.TestUtils;
-import org.identityconnectors.framework.common.objects.ConnectorObject;
-import org.identityconnectors.framework.common.objects.Name;
-import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
-import org.identityconnectors.framework.common.objects.ResultsHandler;
+import org.identityconnectors.framework.common.objects.*;
 import org.identityconnectors.framework.common.objects.filter.EqualsFilter;
 import org.junit.jupiter.api.Test;
 
@@ -136,6 +133,68 @@ class GroupSearchTests extends AbstractTests {
         List<Object> adminMember = result.getAttributeByName(GroupsHandler.ATTR_ADMIN_MEMBER).getValue();
         assertEquals(1, adminMember.size());
         assertEquals("12345678", adminMember.get(0).toString());
+    }
+
+    @Test
+    void searchAllGroup_1_fullAttributes_incomplete() {
+        // Given
+        AtomicReference<BoxAPIRequest> request = new AtomicReference<>();
+        mockAPI.push(req -> {
+            request.set(req);
+
+            return ok("group-list-1.json");
+        });
+        mockAPI.push(req -> {
+            fail("Shouldn't be called");
+            return null;
+        });
+
+        List<ConnectorObject> groups = new ArrayList<>();
+        ResultsHandler handler = connectorObject -> {
+            groups.add(connectorObject);
+            return true;
+        };
+
+        // When
+        connector.search(OBJECT_CLASS_GROUP,
+                null,
+                handler,
+                new OperationOptionsBuilder()
+                        .setReturnDefaultAttributes(true)
+                        .setAttributesToGet(
+                                FULL_ATTRS_WITH_ASSOCIATION_SET
+                        )
+                        .setAllowPartialAttributeValues(true) // set ALLOW_PARTIAL_ATTRIBUTE_VALUES operation option
+                        .build());
+
+        // Then
+        assertNotNull(request.get());
+        assertEquals(1, groups.size());
+        assertEquals(OBJECT_CLASS_GROUP, groups.get(0).getObjectClass());
+        assertEquals("11446498", groups.get(0).getUid().getUidValue());
+        assertEquals("Support", groups.get(0).getName().getNameValue());
+
+        ConnectorObject result = groups.get(0);
+
+        // The number of fetched attributes is +1 because of the addition of __UID__
+        assertEquals(1 + MINI_ATTRS.length + STANDARD_ATTRS.length + FULL_ATTRS.length + ASSOCIATION_ATTRS.length,
+                result.getAttributes().size());
+
+        for (String attr : GroupsHandler.FULL_ATTRS_WITH_ASSOCIATION_SET) {
+            // name is fetched as __NAME__ and checked already, skip it
+            if (attr.equals(GroupsHandler.ATTR_NAME)) {
+                continue;
+            }
+            assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
+        }
+
+        List<Object> member = result.getAttributeByName(GroupsHandler.ATTR_MEMBER).getValue();
+        assertEquals(0, member.size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(GroupsHandler.ATTR_MEMBER).getAttributeValueCompleteness());
+
+        List<Object> adminMember = result.getAttributeByName(GroupsHandler.ATTR_ADMIN_MEMBER).getValue();
+        assertEquals(0, adminMember.size());
+        assertEquals(AttributeValueCompleteness.INCOMPLETE, result.getAttributeByName(GroupsHandler.ATTR_ADMIN_MEMBER).getAttributeValueCompleteness());
     }
 
     @Test

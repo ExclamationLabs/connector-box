@@ -337,32 +337,33 @@ public class GroupsHandler extends AbstractHandler {
         LOGGER.info("[{0}] GroupsHandler query VALUE: {1}", instanceName, query);
 
         Set<String> attributesToGet = createFullAttributesToGetSet(STANDARD_ATTRS_SET, ops);
+        boolean allowPartialAttributeValues = shouldAllowPartialAttributeValues(ops);
 
         if (query == null) {
-            getAllGroups(handler, ops, attributesToGet);
+            getAllGroups(handler, ops, attributesToGet, allowPartialAttributeValues);
         } else {
             if (query.isByUid()) {
-                getGroup(query.uid, handler, ops, attributesToGet);
+                getGroup(query.uid, handler, ops, attributesToGet, allowPartialAttributeValues);
             } else {
-                getGroup(query.name, handler, ops, attributesToGet);
+                getGroup(query.name, handler, ops, attributesToGet, allowPartialAttributeValues);
             }
         }
     }
 
-    private void getAllGroups(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getAllGroups(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         Iterable<BoxGroup.Info> groups = BoxGroup.getAllGroups(boxAPI, toFetchFields(attributesToGet, ASSOCIATION_ATTRS_SET));
         for (BoxGroup.Info groupInfo : groups) {
-            handler.handle(groupToConnectorObject(groupInfo, attributesToGet));
+            handler.handle(groupToConnectorObject(groupInfo, attributesToGet, allowPartialAttributeValues));
         }
     }
 
-    private void getGroup(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getGroup(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         BoxGroup group = new BoxGroup(boxAPI, uid.getUidValue());
         try {
             // Fetch a group
             BoxGroup.Info info = group.getInfo(toFetchFields(attributesToGet, ASSOCIATION_ATTRS_SET));
 
-            handler.handle(groupToConnectorObject(info, attributesToGet));
+            handler.handle(groupToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
 
         } catch (BoxAPIException e) {
             if (isNotFoundError(e)) {
@@ -374,7 +375,7 @@ public class GroupsHandler extends AbstractHandler {
         }
     }
 
-    private void getGroup(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getGroup(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         // "List groups for enterprise" doesn't support find by "name" according to the following API spec:
         // https://developer.box.com/reference/get-groups/
         // But it supports query filter internally and the SDK has utility method: BoxGroup.getAllGroupsByName.
@@ -382,7 +383,7 @@ public class GroupsHandler extends AbstractHandler {
 
         for (BoxGroup.Info info : groups) {
             if (info.getName().equalsIgnoreCase(name.getNameValue())) {
-                handler.handle(groupToConnectorObject(info, attributesToGet));
+                handler.handle(groupToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
                 break;
             }
         }
@@ -401,7 +402,7 @@ public class GroupsHandler extends AbstractHandler {
         }
     }
 
-    private ConnectorObject groupToConnectorObject(BoxGroup.Info info, Set<String> attributesToGet) {
+    private ConnectorObject groupToConnectorObject(BoxGroup.Info info, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
 
         builder.setObjectClass(OBJECT_CLASS_GROUP);
@@ -441,22 +442,40 @@ public class GroupsHandler extends AbstractHandler {
 
         // Association
         if (attributesToGet.contains(ATTR_MEMBER) || attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
-            // Fetch the group members
-            Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
-            List<String> member = new ArrayList<>();
-            List<String> admin = new ArrayList<>();
-            for (BoxGroupMembership.Info membershipInfo : memberships) {
-                if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER) && attributesToGet.contains(ATTR_MEMBER)) {
-                    member.add(membershipInfo.getUser().getID());
-                } else if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN) && attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
-                    admin.add(membershipInfo.getGroup().getID());
+            if (allowPartialAttributeValues) {
+                // Suppress fetching group member
+                LOGGER.ok("Suppress fetching group member because return partial attribute values is requested");
+
+                if (attributesToGet.contains(ATTR_MEMBER)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_MEMBER).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
                 }
-            }
-            if (attributesToGet.contains(ATTR_MEMBER)) {
-                builder.addAttribute(ATTR_MEMBER, member);
-            }
-            if (attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
-                builder.addAttribute(ATTR_ADMIN_MEMBER, admin);
+                if (attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_ADMIN_MEMBER).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
+                }
+            } else {
+                // Fetch the group members
+                Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
+                List<String> member = new ArrayList<>();
+                List<String> admin = new ArrayList<>();
+                for (BoxGroupMembership.Info membershipInfo : memberships) {
+                    if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER) && attributesToGet.contains(ATTR_MEMBER)) {
+                        member.add(membershipInfo.getUser().getID());
+                    } else if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN) && attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
+                        admin.add(membershipInfo.getGroup().getID());
+                    }
+                }
+                if (attributesToGet.contains(ATTR_MEMBER)) {
+                    builder.addAttribute(ATTR_MEMBER, member);
+                }
+                if (attributesToGet.contains(ATTR_ADMIN_MEMBER)) {
+                    builder.addAttribute(ATTR_ADMIN_MEMBER, admin);
+                }
             }
         }
 

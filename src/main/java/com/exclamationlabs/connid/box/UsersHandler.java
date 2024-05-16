@@ -407,34 +407,35 @@ public class UsersHandler extends AbstractHandler {
         LOGGER.info("[{0}] UserHandler query VALUE: {1}", instanceName, query);
 
         Set<String> attributesToGet = createFullAttributesToGetSet(STANDARD_ATTRS_SET, ops);
+        boolean allowPartialAttributeValues = shouldAllowPartialAttributeValues(ops);
 
         if (query == null) {
-            getAllUsers(handler, ops, attributesToGet);
+            getAllUsers(handler, ops, attributesToGet, allowPartialAttributeValues);
         } else {
             if (query.isByUid()) {
-                getUser(query.uid, handler, ops, attributesToGet);
+                getUser(query.uid, handler, ops, attributesToGet, allowPartialAttributeValues);
             } else {
-                getUser(query.name, handler, ops, attributesToGet);
+                getUser(query.name, handler, ops, attributesToGet, allowPartialAttributeValues);
             }
         }
     }
 
-    private void getAllUsers(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getAllUsers(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPI, null,
                 toFetchFields(attributesToGet, UsersHandler.ASSOCIATION_ATTRS_SET));
 
         for (BoxUser.Info info : users) {
-            handler.handle(userToConnectorObject(info, attributesToGet));
+            handler.handle(userToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
         }
     }
 
-    private void getUser(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getUser(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         BoxUser user = new BoxUser(boxAPI, uid.getUidValue());
         try {
             // Fetch an user
             BoxUser.Info info = user.getInfo(toFetchFields(attributesToGet, UsersHandler.ASSOCIATION_ATTRS_SET));
 
-            handler.handle(userToConnectorObject(info, attributesToGet));
+            handler.handle(userToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
 
         } catch (BoxAPIException e) {
             if (isNotFoundError(e)) {
@@ -446,7 +447,7 @@ public class UsersHandler extends AbstractHandler {
         }
     }
 
-    private void getUser(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getUser(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         // "List enterprise users" supports find by "login" which is treated as __NAME__ in this connector.
         // https://developer.box.com/reference/get-users/
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPI, name.getNameValue(),
@@ -454,7 +455,7 @@ public class UsersHandler extends AbstractHandler {
 
         for (BoxUser.Info info : users) {
             if (info.getLogin().equalsIgnoreCase(name.getNameValue())) {
-                handler.handle(userToConnectorObject(info, attributesToGet));
+                handler.handle(userToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
                 // Break the loop to stop fetching remaining users if found
                 return;
             }
@@ -986,7 +987,7 @@ public class UsersHandler extends AbstractHandler {
         user.delete(false, false);
     }
 
-    private ConnectorObject userToConnectorObject(BoxUser.Info info, Set<String> attributesToGet) {
+    private ConnectorObject userToConnectorObject(BoxUser.Info info, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
 
         builder.setObjectClass(OBJECT_CLASS_USER);
@@ -1094,42 +1095,66 @@ public class UsersHandler extends AbstractHandler {
         if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP) ||
                 attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP) ||
                 attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
-            // Fetch groups
-            Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
+            if (allowPartialAttributeValues) {
+                // Suppress fetching group membership
+                LOGGER.ok("Suppress fetching group membership because return partial attribute values is requested");
 
-            List<String> groupMemberships = new ArrayList<>();
-            List<String> groupAdminMemberships = new ArrayList<>();
-            List<String> groupAdminMembershipPermissions = new ArrayList<>();
-
-            for (BoxGroupMembership.Info membershipInfo : memberships) {
-                LOGGER.info("[{0}] Group INFO getID {1}, role {2}", instanceName, membershipInfo.getGroup().getID(), membershipInfo.getGroupRole());
-                if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER)) {
-                    groupMemberships.add(membershipInfo.getGroup().getID());
+                if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_GROUP_MEMBERSHIP).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
                 }
-                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN)) {
-                    groupAdminMemberships.add(membershipInfo.getGroup().getID());
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_GROUP_ADMIN_MEMBERSHIP).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
                 }
-                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN)) {
-                    // We need to call group membership API to fetch "configurable_permission"
-                    Map<BoxGroupMembership.Permission, Boolean> permissions = membershipInfo.getResource().getInfo().getConfigurablePermissions();
-                    if (permissions != null) {
-                        String params = permissions.entrySet().stream()
-                                .sorted(Map.Entry.comparingByKey())
-                                .map(entry -> entry.getKey().name().toLowerCase() + "=" + entry.getValue())
-                                .collect(Collectors.joining(","));
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
+                }
+            } else {
+                // Fetch groups
+                Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
 
-                        groupAdminMembershipPermissions.add(membershipInfo.getGroup().getID() + "#" + params);
+                List<String> groupMemberships = new ArrayList<>();
+                List<String> groupAdminMemberships = new ArrayList<>();
+                List<String> groupAdminMembershipPermissions = new ArrayList<>();
+
+                for (BoxGroupMembership.Info membershipInfo : memberships) {
+                    LOGGER.info("[{0}] Group INFO getID {1}, role {2}", instanceName, membershipInfo.getGroup().getID(), membershipInfo.getGroupRole());
+                    if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER)) {
+                        groupMemberships.add(membershipInfo.getGroup().getID());
+                    }
+                    if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN)) {
+                        groupAdminMemberships.add(membershipInfo.getGroup().getID());
+                    }
+                    if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN)) {
+                        // We need to call group membership API to fetch "configurable_permission"
+                        Map<BoxGroupMembership.Permission, Boolean> permissions = membershipInfo.getResource().getInfo().getConfigurablePermissions();
+                        if (permissions != null) {
+                            String params = permissions.entrySet().stream()
+                                    .sorted(Map.Entry.comparingByKey())
+                                    .map(entry -> entry.getKey().name().toLowerCase() + "=" + entry.getValue())
+                                    .collect(Collectors.joining(","));
+
+                            groupAdminMembershipPermissions.add(membershipInfo.getGroup().getID() + "#" + params);
+                        }
                     }
                 }
-            }
-            if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP)) {
-                builder.addAttribute(ATTR_GROUP_MEMBERSHIP, groupMemberships);
-            }
-            if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
-                builder.addAttribute(ATTR_GROUP_ADMIN_MEMBERSHIP, groupAdminMemberships);
-            }
-            if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
-                builder.addAttribute(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION, groupAdminMembershipPermissions);
+                if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP)) {
+                    builder.addAttribute(ATTR_GROUP_MEMBERSHIP, groupMemberships);
+                }
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
+                    builder.addAttribute(ATTR_GROUP_ADMIN_MEMBERSHIP, groupAdminMemberships);
+                }
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+                    builder.addAttribute(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION, groupAdminMembershipPermissions);
+                }
             }
         }
 

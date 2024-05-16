@@ -130,6 +130,10 @@ public class AbstractHandler {
         return options.getReturnDefaultAttributes() == null || Boolean.TRUE.equals(options.getReturnDefaultAttributes());
     }
 
+    public static boolean shouldAllowPartialAttributeValues(OperationOptions options) {
+        return Boolean.TRUE.equals(options.getAllowPartialAttributeValues());
+    }
+
     protected boolean isUserAlreadyExistsError(BoxAPIException e) {
         if (e.getResponseCode() != 409) {
             return false;
