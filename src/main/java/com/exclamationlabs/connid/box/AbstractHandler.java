@@ -55,7 +55,7 @@ public class AbstractHandler {
         return AttributeUtil.getBooleanValue(attr);
     }
 
-    protected Boolean getBooleangValue(AttributeDelta delta) {
+    protected Boolean getBooleanValue(AttributeDelta delta) {
         if (delta.getValuesToReplace().isEmpty()) {
             // To delete the attribute in Box side, we need to set false.
             return false;
@@ -130,6 +130,10 @@ public class AbstractHandler {
         return options.getReturnDefaultAttributes() == null || Boolean.TRUE.equals(options.getReturnDefaultAttributes());
     }
 
+    public static boolean shouldAllowPartialAttributeValues(OperationOptions options) {
+        return Boolean.TRUE.equals(options.getAllowPartialAttributeValues());
+    }
+
     protected boolean isUserAlreadyExistsError(BoxAPIException e) {
         if (e.getResponseCode() != 409) {
             return false;
@@ -164,5 +168,10 @@ public class AbstractHandler {
         return new UnknownUidException(
                 String.format("Object with Uid '%s' and ObjectClass '%s' does not exist!", uid, objectClass),
                 e);
+    }
+
+    protected String[] toFetchFields(Set<String> attributesToGet, Set<String> excludes) {
+        String[] fetchFields = attributesToGet.stream().filter(a -> !excludes.contains(a)).toArray(String[]::new);
+        return fetchFields;
     }
 }

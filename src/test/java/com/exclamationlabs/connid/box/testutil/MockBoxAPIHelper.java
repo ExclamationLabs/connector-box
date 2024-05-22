@@ -45,7 +45,7 @@ public class MockBoxAPIHelper {
     }
 
     public void init() {
-        this.api.setMaxRequestAttempts(1); // Set 1 for testing
+        this.api.setMaxRetryAttempts(1); // Set 1 for testing
         this.api.setRequestInterceptor(req -> {
             if (interceptors.size() == 0) {
                 fail("Mock Box API wasn't set but an API was called.\n" + req.toString());
@@ -89,7 +89,7 @@ public class MockBoxAPIHelper {
     }
 
     public void setMaxRequestAttempts(int attempts) {
-        this.api.setMaxRequestAttempts(attempts);
+        this.api.setMaxRetryAttempts(attempts);
     }
 
     /**

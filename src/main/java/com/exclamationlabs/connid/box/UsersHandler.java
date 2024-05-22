@@ -8,6 +8,7 @@
 package com.exclamationlabs.connid.box;
 
 import com.box.sdk.*;
+import org.identityconnectors.common.CollectionUtil;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.exceptions.AlreadyExistsException;
@@ -72,6 +73,8 @@ public class UsersHandler extends AbstractHandler {
 
     // Association
     protected static final String ATTR_GROUP_MEMBERSHIP = "group_membership";
+    protected static final String ATTR_GROUP_ADMIN_MEMBERSHIP = "group_admin_membership";
+    protected static final String ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION = "group_admin_membership_permission";
 
     protected static final String[] MINI_ATTRS = new String[]{
             ATTR_NAME,
@@ -109,14 +112,31 @@ public class UsersHandler extends AbstractHandler {
             ATTR_ROLE,
             ATTR_TRACKING_CODES
     };
+    protected static final String[] ASSOCIATION_ATTRS = new String[]{
+            ATTR_GROUP_MEMBERSHIP,
+            ATTR_GROUP_ADMIN_MEMBERSHIP,
+            ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION,
+    };
     protected static final Set<String> STANDARD_ATTRS_SET =
             Collections.unmodifiableSet(Stream.of(
                     MINI_ATTRS,
                     STANDARD_ATTRS
             ).flatMap(Arrays::stream).collect(Collectors.toSet()));
+    protected static final Set<String> ASSOCIATION_ATTRS_SET =
+            Collections.unmodifiableSet(Arrays.stream(ASSOCIATION_ATTRS).collect(Collectors.toSet()));
+    protected static final Set<String> FULL_ATTRS_WITH_ASSOCIATION_SET =
+            Collections.unmodifiableSet(Stream.of(
+                    MINI_ATTRS,
+                    STANDARD_ATTRS,
+                    FULL_ATTRS,
+                    ASSOCIATION_ATTRS
+            ).flatMap(Arrays::stream).collect(Collectors.toSet()));
 
-    public UsersHandler(String instanceName, BoxAPIConnection boxAPI) {
+    private final BoxConfiguration configuration;
+
+    public UsersHandler(String instanceName, BoxAPIConnection boxAPI, BoxConfiguration configuration) {
         super(instanceName, boxAPI);
+        this.configuration = configuration;
     }
 
     public ObjectClassInfo getUserSchema() {
@@ -363,6 +383,16 @@ public class UsersHandler extends AbstractHandler {
                 .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_GROUP_MEMBERSHIP))
                 .build());
 
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_GROUP_ADMIN_MEMBERSHIP)
+                .setMultiValued(true)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_GROUP_ADMIN_MEMBERSHIP))
+                .build());
+
+        builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)
+                .setMultiValued(true)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION))
+                .build());
+
         // __ENABLE__
         builder.addAttributeInfo(OperationalAttributeInfos.ENABLE);
 
@@ -377,34 +407,35 @@ public class UsersHandler extends AbstractHandler {
         LOGGER.info("[{0}] UserHandler query VALUE: {1}", instanceName, query);
 
         Set<String> attributesToGet = createFullAttributesToGetSet(STANDARD_ATTRS_SET, ops);
+        boolean allowPartialAttributeValues = shouldAllowPartialAttributeValues(ops);
 
         if (query == null) {
-            getAllUsers(handler, ops, attributesToGet);
+            getAllUsers(handler, ops, attributesToGet, allowPartialAttributeValues);
         } else {
             if (query.isByUid()) {
-                getUser(query.uid, handler, ops, attributesToGet);
+                getUser(query.uid, handler, ops, attributesToGet, allowPartialAttributeValues);
             } else {
-                getUser(query.name, handler, ops, attributesToGet);
+                getUser(query.name, handler, ops, attributesToGet, allowPartialAttributeValues);
             }
         }
     }
 
-    private void getAllUsers(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getAllUsers(ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPI, null,
-                attributesToGet.toArray(new String[attributesToGet.size()]));
+                toFetchFields(attributesToGet, UsersHandler.ASSOCIATION_ATTRS_SET));
 
         for (BoxUser.Info info : users) {
-            handler.handle(userToConnectorObject(info, attributesToGet));
+            handler.handle(userToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
         }
     }
 
-    private void getUser(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getUser(Uid uid, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         BoxUser user = new BoxUser(boxAPI, uid.getUidValue());
         try {
             // Fetch an user
-            BoxUser.Info info = user.getInfo(attributesToGet.toArray(new String[attributesToGet.size()]));
+            BoxUser.Info info = user.getInfo(toFetchFields(attributesToGet, UsersHandler.ASSOCIATION_ATTRS_SET));
 
-            handler.handle(userToConnectorObject(info, attributesToGet));
+            handler.handle(userToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
 
         } catch (BoxAPIException e) {
             if (isNotFoundError(e)) {
@@ -416,15 +447,15 @@ public class UsersHandler extends AbstractHandler {
         }
     }
 
-    private void getUser(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet) {
+    private void getUser(Name name, ResultsHandler handler, OperationOptions ops, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         // "List enterprise users" supports find by "login" which is treated as __NAME__ in this connector.
         // https://developer.box.com/reference/get-users/
         Iterable<BoxUser.Info> users = BoxUser.getAllEnterpriseUsers(boxAPI, name.getNameValue(),
-                attributesToGet.toArray(new String[attributesToGet.size()]));
+                toFetchFields(attributesToGet, UsersHandler.ASSOCIATION_ATTRS_SET));
 
         for (BoxUser.Info info : users) {
             if (info.getLogin().equalsIgnoreCase(name.getNameValue())) {
-                handler.handle(userToConnectorObject(info, attributesToGet));
+                handler.handle(userToConnectorObject(info, attributesToGet, allowPartialAttributeValues));
                 // Break the loop to stop fetching remaining users if found
                 return;
             }
@@ -440,7 +471,9 @@ public class UsersHandler extends AbstractHandler {
 
         String login = null;
         String name = null;
-        List<String> groupsToAdd = new ArrayList<>();
+        List<String> groupsToAdd = null;
+        List<String> groupAdminsToAdd = null;
+        Map<String, Map<BoxGroupMembership.Permission, Boolean>> groupAdminPermissionsToAdd = null;
 
         for (Attribute attr : attributes) {
             if (attr.getName().equals(Name.NAME)) {
@@ -508,9 +541,21 @@ public class UsersHandler extends AbstractHandler {
                     }
                 }
             } else if (attr.getName().equals(ATTR_GROUP_MEMBERSHIP)) {
+                if (groupsToAdd == null) {
+                    groupsToAdd = new ArrayList<>();
+                }
                 for (Object o : attr.getValue()) {
                     groupsToAdd.add(o.toString());
                 }
+            } else if (attr.getName().equals(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
+                if (groupAdminsToAdd == null) {
+                    groupAdminsToAdd = new ArrayList<>();
+                }
+                for (Object o : attr.getValue()) {
+                    groupAdminsToAdd.add(o.toString());
+                }
+            } else if (attr.getName().equals(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+                groupAdminPermissionsToAdd = toGroupAdminPermissionMap(attr.getValue());
             }
         }
 
@@ -524,11 +569,20 @@ public class UsersHandler extends AbstractHandler {
         try {
             BoxUser.Info createdUserInfo = BoxUser.createEnterpriseUser(boxAPI, login, name, createUserParams);
 
-            if (!groupsToAdd.isEmpty()) {
+            if (!CollectionUtil.isEmpty(groupsToAdd)) {
                 BoxUser user = createdUserInfo.getResource();
                 for (String group : groupsToAdd) {
                     BoxGroup boxGroup = new BoxGroup(boxAPI, group);
                     boxGroup.addMembership(user);
+                }
+            }
+            if (!CollectionUtil.isEmpty(groupAdminsToAdd)) {
+                BoxUser user = createdUserInfo.getResource();
+                Map<BoxGroupMembership.Permission, Boolean> defaultPermissions = configureDefaultGroupAdminPermissions();
+
+                for (String group : groupAdminsToAdd) {
+                    BoxGroup boxGroup = new BoxGroup(boxAPI, group);
+                    boxGroup.addMembership(user, BoxGroupMembership.GroupRole.ADMIN, getOrDefaultPermissions(groupAdminPermissionsToAdd, group, defaultPermissions));
                 }
             }
 
@@ -542,6 +596,36 @@ public class UsersHandler extends AbstractHandler {
         }
     }
 
+    private Map<String, Map<BoxGroupMembership.Permission, Boolean>> toGroupAdminPermissionMap(List<Object> attrValues) {
+        Map<String, Map<BoxGroupMembership.Permission, Boolean>> groupAdminPermissionMap = new HashMap<>();
+        for (Object attrValue : attrValues) {
+            // The format is "groupId#can_create_accounts=true,can_edit_accounts=true,can_instant_login=true,can_run_reports=true"
+            String str = attrValue.toString();
+            String[] params = str.split("#");
+            if (params.length == 2) {
+                String[] permissions = params[1].split(",");
+                if (permissions.length > 0) {
+                    Map<BoxGroupMembership.Permission, Boolean> permissionMap = configureDefaultGroupAdminPermissions();
+                    for (String perm : permissions) {
+                        String[] kv = perm.split("=");
+                        if (kv.length == 2) {
+                            try {
+                                BoxGroupMembership.Permission key = BoxGroupMembership.Permission.valueOf(kv[0].toUpperCase());
+                                permissionMap.put(key, Boolean.parseBoolean(kv[1]));
+                            } catch (IllegalArgumentException e) {
+                                LOGGER.warn("[{0}] Invalid box group admin permission, ignore it: {1}", instanceName, kv[0]);
+                            }
+                        }
+                    }
+                    if (!permissionMap.isEmpty()) {
+                        groupAdminPermissionMap.put(params[0], permissionMap);
+                    }
+                }
+            }
+        }
+        return groupAdminPermissionMap;
+    }
+
     public Set<AttributeDelta> updateUser(Uid uid, Set<AttributeDelta> modifications) {
         BoxUser user = new BoxUser(boxAPI, uid.getUidValue());
         BoxUser.Info info = user.new Info();
@@ -553,6 +637,9 @@ public class UsersHandler extends AbstractHandler {
         boolean renameLogin = false;
         Set<String> groupsToAdd = null;
         Set<String> groupsToRemove = null;
+        Set<String> groupAdminsToAdd = null;
+        Set<String> groupAdminsToRemove = null;
+        Map<String, Map<BoxGroupMembership.Permission, Boolean>> groupAdminPermissionsToUpdate = null;
 
         for (AttributeDelta delta : modifications) {
             if (delta.getName().equals(ATTR_NAME)) {
@@ -562,13 +649,13 @@ public class UsersHandler extends AbstractHandler {
                 info.setAddress(getStringValue(delta));
 
             } else if (delta.getName().equals(ATTR_CAN_SEE_MANAGED_USERS)) {
-                info.setCanSeeManagedUsers(getBooleangValue(delta));
+                info.setCanSeeManagedUsers(getBooleanValue(delta));
 
             } else if (delta.getName().equals(ATTR_IS_EXEMPT_FROM_DEVICE_LIMITS)) {
-                info.setIsExemptFromDeviceLimits(getBooleangValue(delta));
+                info.setIsExemptFromDeviceLimits(getBooleanValue(delta));
 
             } else if (delta.getName().equals(ATTR_IS_SYNC_ENABLED)) {
-                info.setIsSyncEnabled(getBooleangValue(delta));
+                info.setIsSyncEnabled(getBooleanValue(delta));
 
             } else if (delta.getName().equals(ATTR_JOB_TITLE)) {
                 info.setJobTitle(getStringValue(delta));
@@ -583,7 +670,7 @@ public class UsersHandler extends AbstractHandler {
                 info.setSpaceAmount(getLongValue(delta));
 
             } else if (delta.getName().equals(OperationalAttributes.ENABLE_NAME)) {
-                if (getBooleangValue(delta)) {
+                if (getBooleanValue(delta)) {
                     info.setStatus(BoxUser.Status.ACTIVE);
                 } else {
                     info.setStatus(BoxUser.Status.INACTIVE);
@@ -610,6 +697,17 @@ public class UsersHandler extends AbstractHandler {
             } else if (delta.getName().equals(ATTR_GROUP_MEMBERSHIP)) {
                 groupsToAdd = getStringValuesToAdd(delta);
                 groupsToRemove = getStringValuesToRemove(delta);
+
+            } else if (delta.getName().equals(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
+                groupAdminsToAdd = getStringValuesToAdd(delta);
+                groupAdminsToRemove = getStringValuesToRemove(delta);
+
+            } else if (delta.getName().equals(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+                // It's ok handling valuesToAdd only for ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION to update the permission
+                List<Object> valuesToAdd = delta.getValuesToAdd();
+                if (valuesToAdd != null) {
+                    groupAdminPermissionsToUpdate = toGroupAdminPermissionMap(valuesToAdd);
+                }
             }
         }
 
@@ -659,31 +757,185 @@ public class UsersHandler extends AbstractHandler {
             deleteEmailAlias(uid, oldLogin);
         }
 
+        // Switching from admin to member.
+        Set<String> groupToUpdate = null;
+        if (groupsToAdd != null && groupAdminsToRemove != null) {
+            Set<String> intersection = new HashSet<>(groupsToAdd);
+            intersection.retainAll(groupAdminsToRemove);
+            for (String groupId : intersection) {
+                // When switching group role, we only need update membership operation.
+                groupsToAdd.remove(groupId);
+                groupAdminsToRemove.remove(groupId);
+                if (groupToUpdate == null) {
+                    groupToUpdate = new HashSet<>();
+                }
+                groupToUpdate.add(groupId);
+            }
+        }
+
+        // Switching from member to admin.
+        if (groupsToRemove != null && groupAdminsToAdd != null) {
+            Set<String> intersection = new HashSet<>(groupsToRemove);
+            intersection.retainAll(groupAdminsToAdd);
+            for (String groupId : intersection) {
+                // When switching group role, we only need update membership operation.
+                groupsToRemove.remove(groupId);
+                groupAdminsToAdd.remove(groupId);
+                if (groupAdminPermissionsToUpdate == null) {
+                    groupAdminPermissionsToUpdate = new HashMap<>();
+                }
+                if (!groupAdminPermissionsToUpdate.containsKey(groupId)) {
+                    groupAdminPermissionsToUpdate.put(groupId, configureDefaultGroupAdminPermissions());
+                }
+            }
+        }
+
         if (groupsToAdd != null || groupsToRemove != null) {
-            updateMemberships(uid, groupsToAdd, groupsToRemove);
+            updateMemberships(uid, groupsToAdd, groupsToRemove, groupToUpdate);
+        }
+
+        if (groupAdminsToAdd != null || groupAdminsToRemove != null || groupAdminPermissionsToUpdate != null) {
+            Map<String, Map<BoxGroupMembership.Permission, Boolean>> mergedgroupAdminsToAdd = new HashMap<>();
+
+            // Merge groupAdminsToAdd and groupAdminPermissionsToAdd for adding new admin membership
+            if (groupAdminsToAdd != null) {
+                for (String groupId : groupAdminsToAdd) {
+                    if (groupAdminPermissionsToUpdate != null && groupAdminPermissionsToUpdate.containsKey(groupId)) {
+                        mergedgroupAdminsToAdd.put(groupId, groupAdminPermissionsToUpdate.get(groupId));
+                        groupAdminPermissionsToUpdate.remove(groupId);
+                    } else {
+                        mergedgroupAdminsToAdd.put(groupId, configureDefaultGroupAdminPermissions());
+                    }
+                }
+            }
+
+            updateAdminMemberships(uid, mergedgroupAdminsToAdd, groupAdminsToRemove, groupAdminPermissionsToUpdate);
         }
 
         // Box doesn't support to modify user's id
         return null;
     }
 
-    private void updateMemberships(Uid uid, Set<String> groupsToAdd, Set<String> groupsToRemove) {
+    private void updateMemberships(Uid uid, Set<String> groupsToAdd, Set<String> groupsToRemove, Set<String> groupToUpdate) {
         BoxUser user = new BoxUser(boxAPI, uid.getUidValue());
 
-        if (groupsToAdd != null && !groupsToAdd.isEmpty()) {
+        if (!CollectionUtil.isEmpty(groupsToAdd)) {
             for (String group : groupsToAdd) {
                 BoxGroup boxGroup = new BoxGroup(boxAPI, group);
                 boxGroup.addMembership(user);
             }
         }
-        if (groupsToRemove != null && !groupsToRemove.isEmpty()) {
+        if (!CollectionUtil.isEmpty(groupsToRemove)) {
             Iterable<BoxGroupMembership.Info> memberships = user.getAllMemberships();
             for (BoxGroupMembership.Info membershipInfo : memberships) {
-                if (groupsToRemove.contains(membershipInfo.getGroup().getID())) {
+                // Don't delete if the group role is not "member"
+                if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER) && groupsToRemove.contains(membershipInfo.getGroup().getID())) {
                     membershipInfo.getResource().delete();
                 }
             }
         }
+        if (!CollectionUtil.isEmpty(groupToUpdate)) {
+            // We need to fetch membership of the user to update the membership
+            Iterable<BoxGroupMembership.Info> allMemberships = user.getAllMemberships();
+            List<BoxGroupMembership.Info> updateMembership = new ArrayList<>();
+
+            for (BoxGroupMembership.Info membership : allMemberships) {
+                String groupId = membership.getGroup().getID();
+                if (groupToUpdate.contains(groupId)) {
+                    groupToUpdate.remove(groupId);
+                    if (!membership.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER)) {
+                        membership.setGroupRole(BoxGroupMembership.GroupRole.MEMBER);
+                        updateMembership.add(membership);
+                    }
+                }
+                if (groupToUpdate.isEmpty()) {
+                    // Stop fetching remaining membership
+                    break;
+                }
+            }
+
+            for (BoxGroupMembership.Info membership : updateMembership) {
+                new BoxGroupMembership(boxAPI, membership.getID()).updateInfo(membership);
+            }
+        }
+    }
+
+    private void updateAdminMemberships(Uid uid, Map<String, Map<BoxGroupMembership.Permission, Boolean>> groupAdminsToAdd,
+                                        Set<String> groupAdminsToRemove,
+                                        Map<String, Map<BoxGroupMembership.Permission, Boolean>> groupAdminsToUpdate) {
+        BoxUser user = new BoxUser(boxAPI, uid.getUidValue());
+
+        if (groupAdminsToAdd != null) {
+            for (Map.Entry<String, Map<BoxGroupMembership.Permission, Boolean>> entry : groupAdminsToAdd.entrySet()) {
+                String groupId = entry.getKey();
+                Map<BoxGroupMembership.Permission, Boolean> permissions = entry.getValue();
+                BoxGroup boxGroup = new BoxGroup(boxAPI, groupId);
+                boxGroup.addMembership(user, BoxGroupMembership.GroupRole.ADMIN, permissions == null || permissions.isEmpty() ? null : permissions);
+            }
+        }
+        if (!CollectionUtil.isEmpty(groupAdminsToRemove)) {
+            Iterable<BoxGroupMembership.Info> memberships = user.getAllMemberships();
+            for (BoxGroupMembership.Info membershipInfo : memberships) {
+                // Don't delete if the group role is not "admin"
+                if (membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN) && groupAdminsToRemove.contains(membershipInfo.getGroup().getID())) {
+                    membershipInfo.getResource().delete();
+                }
+            }
+        }
+        if (groupAdminsToUpdate != null && !groupAdminsToUpdate.isEmpty()) {
+            // We need to fetch membership of the user to update the membership
+            Iterable<BoxGroupMembership.Info> allMemberships = user.getAllMemberships();
+            List<BoxGroupMembership.Info> updateMembership = new ArrayList<>();
+
+            for (BoxGroupMembership.Info membership : allMemberships) {
+                String groupId = membership.getGroup().getID();
+                if (groupAdminsToUpdate.containsKey(groupId)) {
+                    Map<BoxGroupMembership.Permission, Boolean> permission = groupAdminsToUpdate.remove(groupId);
+                    membership.setGroupRole(BoxGroupMembership.GroupRole.ADMIN);
+                    if (permission != null && !permission.isEmpty()) {
+                        membership.setConfigurablePermissions(permission);
+                    }
+                    updateMembership.add(membership);
+                }
+                if (groupAdminsToUpdate.isEmpty()) {
+                    // Stop fetching remaining membership
+                    break;
+                }
+            }
+
+            for (BoxGroupMembership.Info membership : updateMembership) {
+                new BoxGroupMembership(boxAPI, membership.getID()).updateInfo(membership);
+            }
+        }
+    }
+
+    private Map<BoxGroupMembership.Permission, Boolean> getOrDefaultPermissions(Map<String, Map<BoxGroupMembership.Permission, Boolean>> groupAdminPermissionsMap, String groupId, Map<BoxGroupMembership.Permission, Boolean> defaultPermissions) {
+        if (groupAdminPermissionsMap != null) {
+            if (groupAdminPermissionsMap.containsKey(groupId)) {
+                return groupAdminPermissionsMap.getOrDefault(groupId, defaultPermissions);
+            }
+        }
+        if (defaultPermissions != null && !defaultPermissions.isEmpty()) {
+            return defaultPermissions;
+        }
+        return null;
+    }
+
+    private Map<BoxGroupMembership.Permission, Boolean> configureDefaultGroupAdminPermissions() {
+        Map<BoxGroupMembership.Permission, Boolean> permissions = new HashMap<>();
+        if (configuration.getGroupAdminDefaultPermissionCanCreateAccounts() != null) {
+            permissions.put(BoxGroupMembership.Permission.CAN_CREATE_ACCOUNTS, configuration.getGroupAdminDefaultPermissionCanCreateAccounts());
+        }
+        if (configuration.getGroupAdminDefaultPermissionCanEditAccounts() != null) {
+            permissions.put(BoxGroupMembership.Permission.CAN_EDIT_ACCOUNTS, configuration.getGroupAdminDefaultPermissionCanEditAccounts());
+        }
+        if (configuration.getGroupAdminDefaultPermissionCanCInstantLogin() != null) {
+            permissions.put(BoxGroupMembership.Permission.CAN_INSTANT_LOGIN, configuration.getGroupAdminDefaultPermissionCanCInstantLogin());
+        }
+        if (configuration.getGroupAdminDefaultPermissionCanRunReports() != null) {
+            permissions.put(BoxGroupMembership.Permission.CAN_RUN_REPORTS, configuration.getGroupAdminDefaultPermissionCanRunReports());
+        }
+        return permissions;
     }
 
     private EmailAlias addEmailAlias(Uid uid, String email) {
@@ -735,7 +987,7 @@ public class UsersHandler extends AbstractHandler {
         user.delete(false, false);
     }
 
-    private ConnectorObject userToConnectorObject(BoxUser.Info info, Set<String> attributesToGet) {
+    private ConnectorObject userToConnectorObject(BoxUser.Info info, Set<String> attributesToGet, boolean allowPartialAttributeValues) {
         ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
 
         builder.setObjectClass(OBJECT_CLASS_USER);
@@ -840,15 +1092,70 @@ public class UsersHandler extends AbstractHandler {
         }
 
         // Association
-        if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP)) {
-            // Fetch groups
-            Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
-            List<String> groupMemberships = new ArrayList<>();
-            for (BoxGroupMembership.Info membershipInfo : memberships) {
-                LOGGER.info("[{0}] Group INFO getID {1}", instanceName, membershipInfo.getGroup().getID());
-                groupMemberships.add(membershipInfo.getGroup().getID());
+        if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP) ||
+                attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP) ||
+                attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+            if (allowPartialAttributeValues) {
+                // Suppress fetching group membership
+                LOGGER.ok("Suppress fetching group membership because return partial attribute values is requested");
+
+                if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_GROUP_MEMBERSHIP).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
+                }
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_GROUP_ADMIN_MEMBERSHIP).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
+                }
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+                    AttributeBuilder ab = new AttributeBuilder();
+                    ab.setName(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION).setAttributeValueCompleteness(AttributeValueCompleteness.INCOMPLETE);
+                    ab.addValue(Collections.emptyList());
+                    builder.addAttribute(ab.build());
+                }
+            } else {
+                // Fetch groups
+                Iterable<BoxGroupMembership.Info> memberships = info.getResource().getAllMemberships();
+
+                List<String> groupMemberships = new ArrayList<>();
+                List<String> groupAdminMemberships = new ArrayList<>();
+                List<String> groupAdminMembershipPermissions = new ArrayList<>();
+
+                for (BoxGroupMembership.Info membershipInfo : memberships) {
+                    LOGGER.info("[{0}] Group INFO getID {1}, role {2}", instanceName, membershipInfo.getGroup().getID(), membershipInfo.getGroupRole());
+                    if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.MEMBER)) {
+                        groupMemberships.add(membershipInfo.getGroup().getID());
+                    }
+                    if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN)) {
+                        groupAdminMemberships.add(membershipInfo.getGroup().getID());
+                    }
+                    if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION) && membershipInfo.getGroupRole().equals(BoxGroupMembership.GroupRole.ADMIN)) {
+                        // We need to call group membership API to fetch "configurable_permission"
+                        Map<BoxGroupMembership.Permission, Boolean> permissions = membershipInfo.getResource().getInfo().getConfigurablePermissions();
+                        if (permissions != null) {
+                            String params = permissions.entrySet().stream()
+                                    .sorted(Map.Entry.comparingByKey())
+                                    .map(entry -> entry.getKey().name().toLowerCase() + "=" + entry.getValue())
+                                    .collect(Collectors.joining(","));
+
+                            groupAdminMembershipPermissions.add(membershipInfo.getGroup().getID() + "#" + params);
+                        }
+                    }
+                }
+                if (attributesToGet.contains(ATTR_GROUP_MEMBERSHIP)) {
+                    builder.addAttribute(ATTR_GROUP_MEMBERSHIP, groupMemberships);
+                }
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP)) {
+                    builder.addAttribute(ATTR_GROUP_ADMIN_MEMBERSHIP, groupAdminMemberships);
+                }
+                if (attributesToGet.contains(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION)) {
+                    builder.addAttribute(ATTR_GROUP_ADMIN_MEMBERSHIP_PERMISSION, groupAdminMembershipPermissions);
+                }
             }
-            builder.addAttribute(ATTR_GROUP_MEMBERSHIP, groupMemberships);
         }
 
         ConnectorObject connectorObject = builder.build();

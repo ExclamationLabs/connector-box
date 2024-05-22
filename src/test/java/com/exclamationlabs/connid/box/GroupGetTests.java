@@ -11,12 +11,14 @@ import com.box.sdk.BoxAPIRequest;
 import com.exclamationlabs.connid.box.testutil.AbstractTests;
 import com.exclamationlabs.connid.box.testutil.TestUtils;
 import org.identityconnectors.framework.common.exceptions.RetryableException;
+import org.identityconnectors.framework.common.objects.AttributeUtil;
 import org.identityconnectors.framework.common.objects.ConnectorObject;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.OperationOptionsBuilder;
 import org.identityconnectors.framework.common.objects.Uid;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,7 +46,8 @@ class GroupGetTests extends AbstractTests {
             return ok("group-get.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            fail("Shouldn't be called more than once");
+            return null;
         });
 
         // When
@@ -65,6 +68,7 @@ class GroupGetTests extends AbstractTests {
         assertEquals(OBJECT_CLASS_GROUP, result.getObjectClass());
         assertEquals(uid, result.getUid().getUidValue());
         assertEquals(groupName, result.getName().getNameValue());
+        assertEquals("managed_group", AttributeUtil.getSingleValue(result.getAttributeByName(GroupsHandler.ATTR_GROUP_TYPE)));
 
         for (String attr : GroupsHandler.STANDARD_ATTRS) {
             assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
@@ -87,7 +91,8 @@ class GroupGetTests extends AbstractTests {
             return ok("group-get.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            fail("Shouldn't be called more than once");
+            return null;
         });
 
         // When
@@ -139,7 +144,7 @@ class GroupGetTests extends AbstractTests {
             return ok("group-get.json");
         });
         mockAPI.push(req -> {
-            return ok("group-member-0.json");
+            return ok("group-member-2.json");
         });
 
         // When
@@ -148,7 +153,7 @@ class GroupGetTests extends AbstractTests {
                 new OperationOptionsBuilder()
                         .setReturnDefaultAttributes(true)
                         .setAttributesToGet(
-                                GroupsHandler.FULL_ATTRS
+                                GroupsHandler.FULL_ATTRS_WITH_ASSOCIATION_SET
                         )
                         .build());
 
@@ -165,12 +170,25 @@ class GroupGetTests extends AbstractTests {
         assertEquals(uid, result.getUid().getUidValue());
         assertEquals(groupName, result.getName().getNameValue());
 
-        for (String attr : GroupsHandler.STANDARD_ATTRS) {
+        // The number of fetched attributes is +1 because of the addition of __UID__
+        assertEquals(1 + MINI_ATTRS.length + STANDARD_ATTRS.length + FULL_ATTRS.length + ASSOCIATION_ATTRS.length,
+                result.getAttributes().size());
+
+        for (String attr : GroupsHandler.FULL_ATTRS_WITH_ASSOCIATION_SET) {
+            // name is fetched as __NAME__ and checked already, skip it
+            if (attr.equals(GroupsHandler.ATTR_NAME)) {
+                continue;
+            }
             assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
         }
-        for (String attr : GroupsHandler.FULL_ATTRS) {
-            assertNotNull(result.getAttributeByName(attr), attr + " should not be null");
-        }
+
+        List<Object> member = result.getAttributeByName(GroupsHandler.ATTR_MEMBER).getValue();
+        assertEquals(1, member.size());
+        assertEquals("11446498", member.get(0).toString());
+
+        List<Object> adminMember = result.getAttributeByName(GroupsHandler.ATTR_ADMIN_MEMBER).getValue();
+        assertEquals(1, adminMember.size());
+        assertEquals("12345678", adminMember.get(0).toString());
     }
 
     @Test
@@ -205,7 +223,7 @@ class GroupGetTests extends AbstractTests {
         String groupName = "Support";
 
         // Set retry count of the Box SDK
-        mockAPI.setMaxRequestAttempts(2);
+        mockAPI.setMaxRequestAttempts(1);
 
         AtomicInteger count = new AtomicInteger();
         mockAPI.push(req -> {
@@ -230,7 +248,6 @@ class GroupGetTests extends AbstractTests {
         // Then
         assertNotNull(e);
         assertEquals(2, count.get());
-        ;
     }
 
 }

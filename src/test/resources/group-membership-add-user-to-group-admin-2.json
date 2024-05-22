@@ -8,7 +8,7 @@
   },
   "id": "22222222",
   "modified_at": "2012-12-12T10:53:43-08:00",
-  "role": "member",
+  "role": "admin",
   "type": "group_membership",
   "user": {
     "id": "11446498",
