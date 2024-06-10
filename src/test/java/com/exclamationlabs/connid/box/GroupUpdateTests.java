@@ -111,4 +111,30 @@ class GroupUpdateTests extends AbstractTests {
         assertNotNull(e);
         assertEquals(2, count.get());
     }
+
+    @Test
+    void renameGroup() {
+        // Given
+        String groupName = "Tech";
+
+        Set<AttributeDelta> modifications = new HashSet<>();
+        modifications.add(AttributeDeltaBuilder.build(Name.NAME, "Support"));
+
+        AtomicReference<BoxAPIRequest> request = new AtomicReference<>();
+        mockAPI.push(req -> {
+            request.set(req);
+
+            return ok("group-update.json");
+        });
+
+        // When
+        Set<AttributeDelta> sideEffects = connector.updateDelta(OBJECT_CLASS_GROUP,
+                new Uid("11446498", new Name(groupName)),
+                modifications, new OperationOptionsBuilder().build());
+
+        // Then
+        assertNotNull(request.get());
+        assertEquals("Support", getJsonAttr(request.get(), "name"));
+        assertNull(sideEffects);
+    }
 }
