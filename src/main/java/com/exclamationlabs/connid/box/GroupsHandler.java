@@ -160,22 +160,27 @@ public class GroupsHandler extends AbstractHandler {
 
         // description
         builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_DESCRIPTION)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_DESCRIPTION))
                 .build());
 
         // external_sync_identifier
         builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_EXTERNAL_SYNC_IDENTIFIER)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_EXTERNAL_SYNC_IDENTIFIER))
                 .build());
 
         // invitability_level
         builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_INVITABILITY_LEVEL)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_INVITABILITY_LEVEL))
                 .build());
 
         // member_viewability_level
         builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_MEMBER_VIEWABILITY_LEVEL)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_MEMBER_VIEWABILITY_LEVEL))
                 .build());
 
         // provenance
         builder.addAttributeInfo(AttributeInfoBuilder.define(ATTR_PROVENANCE)
+                .setReturnedByDefault(STANDARD_ATTRS_SET.contains(ATTR_PROVENANCE))
                 .build());
 
         // Association
@@ -299,7 +304,7 @@ public class GroupsHandler extends AbstractHandler {
         BoxGroup.Info info = group.new Info();
 
         for (AttributeDelta delta : modifications) {
-            if (delta.getName().equals(ATTR_NAME)) {
+            if (delta.getName().equals(Name.NAME)) {
                 info.setName(getStringValue(delta));
 
             } else if (delta.getName().equals(ATTR_PROVENANCE)) {
@@ -320,7 +325,9 @@ public class GroupsHandler extends AbstractHandler {
         }
 
         try {
-            info.getResource().updateInfo(info);
+            if (info.getPendingChangesAsJsonObject() != null) {
+                info.getResource().updateInfo(info);
+            }
 
             // Box doesn't support to modify group's id
             return null;
