@@ -105,6 +105,10 @@ public class BoxConnector implements PoolableConnector,
             throw new ConnectorIOException("Failed to connect", e);
         }
 
+        boxDeveloperEditionAPIConnection.setMaxRetryAttempts(config.getMaxRetryAttempts());
+        boxDeveloperEditionAPIConnection.setConnectTimeout(config.getConnectionTimeoutInMilliseconds());
+        boxDeveloperEditionAPIConnection.setReadTimeout(config.getReadTimeoutInMilliseconds());
+
         boxDeveloperEditionAPIConnection.authenticate();
 
         this.boxAPI = boxDeveloperEditionAPIConnection;

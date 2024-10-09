@@ -26,6 +26,9 @@ public class BoxConfiguration extends AbstractConfiguration {
     private Boolean groupAdminDefaultPermissionCanEditAccounts;
     private Boolean groupAdminDefaultPermissionCanCInstantLogin;
     private Boolean groupAdminDefaultPermissionCanRunReports;
+    private int maxRetryAttempts = 5;
+    private int connectionTimeoutInMilliseconds = 10000;
+    private int readTimeoutInMilliseconds = 10000;
 
     @ConfigurationProperty(
             order = 1,
@@ -165,6 +168,48 @@ public class BoxConfiguration extends AbstractConfiguration {
 
     public void setGroupAdminDefaultPermissionCanRunReports(Boolean groupAdminDefaultPermissionCanRunReports) {
         this.groupAdminDefaultPermissionCanRunReports = groupAdminDefaultPermissionCanRunReports;
+    }
+
+    @ConfigurationProperty(
+            order = 11,
+            displayMessageKey = "Maximum retries",
+            helpMessageKey = "Configure how many times API will retry calls (Default: 5)",
+            required = false,
+            confidential = false)
+    public int getMaxRetryAttempts() {
+        return maxRetryAttempts;
+    }
+
+    public void setMaxRetryAttempts(int maxRetryAttempts) {
+        this.maxRetryAttempts = maxRetryAttempts;
+    }
+
+    @ConfigurationProperty(
+            order = 12,
+            displayMessageKey = "Connection Timeout (in milliseconds)",
+            helpMessageKey = "Set up how log (in milliseconds) API waits to establish connection (Default: 10000)",
+            required = false,
+            confidential = false)
+    public int getConnectionTimeoutInMilliseconds() {
+        return connectionTimeoutInMilliseconds;
+    }
+
+    public void setConnectionTimeoutInMilliseconds(int connectionTimeoutInMilliseconds) {
+        this.connectionTimeoutInMilliseconds = connectionTimeoutInMilliseconds;
+    }
+
+    @ConfigurationProperty(
+            order = 13,
+            displayMessageKey = "Read Timeout (in milliseconds)",
+            helpMessageKey = "Set up how log (in milliseconds) API waits to read data from connection (Default: 10000)",
+            required = false,
+            confidential = false)
+    public int getReadTimeoutInMilliseconds() {
+        return readTimeoutInMilliseconds;
+    }
+
+    public void setReadTimeoutInMilliseconds(int readTimeoutInMilliseconds) {
+        this.readTimeoutInMilliseconds = readTimeoutInMilliseconds;
     }
 
     @Override
